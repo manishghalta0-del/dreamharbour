@@ -185,21 +185,26 @@
     }
 
     function showDashboard() {
-      alert("Role detected: " + userRole);
-      document.getElementById('loginScreen').classList.add('hidden');
-      document.getElementById('dashboardScreen').classList.remove('hidden');
-      document.getElementById('userPhoneDisplay').textContent = currentUser.phoneNumber;
-      document.getElementById('roleDisplay').textContent = userRole.toUpperCase();
-      if (userRole === 'owner') {
-        document.getElementById('ownerDashboard').classList.remove('hidden');
-        document.getElementById('employeeDashboard').classList.add('hidden');
-        loadOwnerData();
-      } else if (userRole === 'employee') {
-        document.getElementById('employeeDashboard').classList.remove('hidden');
-        document.getElementById('ownerDashboard').classList.add('hidden');
-        loadEmployeeData();
-      }
-    }
+  alert("Role detected: " + userRole);
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('dashboardScreen').classList.remove('hidden');
+  document.getElementById('userPhoneDisplay').textContent = currentUser.phoneNumber;
+  document.getElementById('roleDisplay').textContent = userRole.toUpperCase();
+
+  // TEMP: Force remove "hidden" in all cases for debugging
+  document.getElementById('ownerDashboard').classList.remove('hidden');
+  document.getElementById('employeeDashboard').classList.remove('hidden');
+
+  if (userRole === 'owner') {
+    document.getElementById('ownerDashboard').style.display = "";
+    document.getElementById('employeeDashboard').style.display = "none";
+    loadOwnerData();
+  } else if (userRole === 'employee') {
+    document.getElementById('ownerDashboard').style.display = "none";
+    document.getElementById('employeeDashboard').style.display = "";
+    loadEmployeeData();
+  }
+}
 
     function showLogin() {
       document.getElementById('dashboardScreen').classList.add('hidden');
