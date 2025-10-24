@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multi-Service Business Suite - CSC, E-Stamping, Document Writing</title>
+  <title>Business Suite Pro - Premium CSC, E-Stamping, Document Writing</title>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -11,191 +11,500 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
-    .header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; text-align: center; }
-    .header h1 { font-size: 32px; margin-bottom: 4px; }
-    .header p { font-size: 14px; opacity: 0.9; }
-    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-    .login-box { background: white; border-radius: 12px; padding: 40px; max-width: 450px; margin: 60px auto; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    input, select, textarea { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; margin: 12px 0; font-size: 16px; font-family: inherit; }
-    input:focus, select:focus { outline: none; border-color: #667eea; }
-    button { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin: 12px 0; }
-    button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
-    .error { color: #ef4444; margin: 10px 0; font-size: 14px; }
-    .success { color: #10b981; margin: 10px 0; font-size: 14px; }
+    html, body { height: 100%; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: #f8fafb; color: #1a202c; }
+    
+    .login-wrapper { display: flex; height: 100vh; }
+    .login-side { flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .login-side-content { text-align: center; color: white; }
+    .login-side h1 { font-size: 48px; font-weight: 700; margin-bottom: 10px; }
+    .login-side p { font-size: 18px; opacity: 0.9; margin-bottom: 20px; }
+    .login-side ul { text-align: left; display: inline-block; margin-top: 30px; }
+    .login-side li { margin: 12px 0; font-size: 15px; display: flex; align-items: center; }
+    .login-side li:before { content: "✓"; margin-right: 12px; font-weight: bold; font-size: 20px; }
+    
+    .login-form { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+    .login-card { width: 100%; max-width: 420px; }
+    .login-card h2 { font-size: 32px; font-weight: 700; margin-bottom: 8px; color: #1a202c; }
+    .login-card p { color: #718096; margin-bottom: 32px; font-size: 15px; }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #2d3748; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .country-phone-group { display: grid; grid-template-columns: 120px 1fr; gap: 12px; }
+    .country-select, .phone-input { width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; transition: all 0.3s; }
+    .country-select:focus, .phone-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    
+    .otp-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; font-weight: 600; letter-spacing: 2px; transition: all 0.3s; }
+    .otp-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    
+    .error-message { color: #e53e3e; font-size: 13px; margin-top: 8px; display: flex; align-items: center; }
+    .error-message:before { content: "⚠"; margin-right: 6px; }
+    
+    .success-message { color: #38a169; font-size: 13px; margin-top: 8px; display: flex; align-items: center; }
+    .success-message:before { content: "✓"; margin-right: 6px; font-weight: bold; }
+    
     .hidden { display: none !important; }
+    
     .dashboard { display: none; }
     .dashboard.active { display: block; }
-    .card { background: white; padding: 20px; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .card h3 { color: #667eea; font-size: 14px; margin-bottom: 10px; font-weight: 600; }
-    .card .amount { font-size: 28px; font-weight: bold; color: #333; }
-    .top-bar { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 16px; }
-    .badge { display: inline-block; padding: 8px 16px; background: #667eea; color: white; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .logout-btn { background: #ef4444; width: auto; padding: 10px 20px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px; }
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; overflow-x: auto; padding-bottom: 12px; }
-    .tab-btn { padding: 10px 20px; background: none; border: none; color: #666; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+    
+    .sidebar-layout { display: grid; grid-template-columns: 280px 1fr; gap: 24px; min-height: 100vh; padding: 24px; }
+    
+    .sidebar { background: white; border-radius: 12px; padding: 24px; height: fit-content; position: sticky; top: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .sidebar-logo { font-size: 20px; font-weight: 700; color: #667eea; margin-bottom: 32px; display: flex; align-items: center; gap: 8px; }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li { margin-bottom: 4px; }
+    .sidebar-menu a { display: block; padding: 12px 16px; border-radius: 6px; color: #4a5568; text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.3s; }
+    .sidebar-menu a:hover { background: #f7fafc; color: #667eea; }
+    .sidebar-menu a.active { background: #eef2ff; color: #667eea; }
+    
+    .top-bar { background: white; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+    .btn-logout { background: #fed7d7; color: #c53030; }
+    .btn-logout:hover { background: #fc8181; }
+    
+    .content { }
+    
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; }
+    .card h3 { font-size: 16px; font-weight: 600; color: #1a202c; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    
+    .stat-card { background: linear-gradient(135deg, #667eea15, #764ba215); padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; }
+    .stat-label { font-size: 13px; color: #718096; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 28px; font-weight: 700; color: #1a202c; }
+    .stat-change { font-size: 12px; color: #48bb78; margin-top: 8px; }
+    
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+    .tab-btn { padding: 12px 16px; background: none; border: none; color: #718096; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; position: relative; bottom: -2px; transition: all 0.3s; }
     .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .table-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding: 15px; border-bottom: 1px solid #e5e7eb; align-items: center; }
-    .table-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding: 15px; background: #f9fafb; font-weight: 600; color: #666; font-size: 12px; }
-    .small-btn { width: auto; padding: 8px 16px; font-size: 13px; margin: 4px; }
-    .chart-container { background: white; border-radius: 8px; padding: 20px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .tax-summary { background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; margin: 15px 0; }
-    .tax-summary p { margin: 8px 0; font-size: 14px; }
-    .tax-summary .bold { font-weight: 600; color: #667eea; }
+    
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .form-group-full { grid-column: 1 / -1; }
+    
+    .input-wrapper { position: relative; }
+    .input-wrapper input, .input-wrapper select, .input-wrapper textarea { width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; font-family: inherit; transition: all 0.3s; }
+    .input-wrapper input:focus, .input-wrapper select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    
+    .search-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 6px 6px; max-height: 300px; overflow-y: auto; z-index: 100; }
+    .suggestion-item { padding: 10px 14px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #edf2f7; }
+    .suggestion-item:hover { background: #f7fafc; }
+    .suggestion-item.active { background: #eef2ff; color: #667eea; }
+    .suggestion-code { color: #a0aec0; font-size: 12px; margin-left: auto; }
+    
+    .table { width: 100%; border-collapse: collapse; }
+    .table th { background: #f7fafc; padding: 12px; text-align: left; font-size: 12px; font-weight: 600; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+    .table td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+    .table tr:hover { background: #f7fafc; }
+    
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-blue { background: #bee3f8; color: #2c5282; }
+    .badge-green { background: #c6f6d5; color: #22543d; }
+    .badge-orange { background: #feebc8; color: #7c2d12; }
+    
+    .empty-state { text-align: center; padding: 60px 20px; }
+    .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state-text { color: #718096; margin-bottom: 16px; }
+    
+    @media (max-width: 1024px) {
+      .sidebar-layout { grid-template-columns: 1fr; }
+      .sidebar { position: relative; top: 0; }
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    @media (max-width: 768px) {
+      .login-wrapper { flex-direction: column; }
+      .login-side { padding: 30px 20px; }
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .login-side-content h1 { font-size: 32px; }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>🏢 Multi-Service Business Suite</h1>
-    <p>CSC | E-Stamping | Document Writing - Complete Accounting & Invoicing</p>
-  </div>
-
   <!-- LOGIN SCREEN -->
-  <div id="loginScreen" class="login-box">
-    <h2>Welcome</h2>
-    <div id="loginSection">
-      <input type="tel" id="phoneNumber" placeholder="+919999999999">
-      <div id="recaptcha-container"></div>
-      <button onclick="sendOTP()">Send OTP</button>
-      <div id="sendError" class="error"></div>
-    </div>
-    <div id="otpSection" class="hidden">
-      <input type="text" id="otpCode" placeholder="Enter 6-digit OTP" maxlength="6">
-      <button onclick="verifyOTP()">Verify Login</button>
-      <div id="verifyError" class="error"></div>
+  <div id="loginScreen">
+    <div class="login-wrapper">
+      <div class="login-side">
+        <div class="login-side-content">
+          <h1>🏢 Business Suite Pro</h1>
+          <p>Complete Accounting for Your Business</p>
+          <ul>
+            <li>CSC Services</li>
+            <li>E-Stamping Services</li>
+            <li>Document Writing</li>
+            <li>Professional Invoicing</li>
+            <li>GST Compliance</li>
+            <li>Advanced Analytics</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="login-form">
+        <div class="login-card">
+          <h2>Sign In</h2>
+          <p>Enter your phone number to get started</p>
+          
+          <div id="phoneLoginSection">
+            <div class="form-group">
+              <label>Phone Number</label>
+              <div class="country-phone-group">
+                <select id="countryCode" class="country-select">
+                  <option value="+91">🇮🇳 +91 India</option>
+                  <option value="+1">🇺🇸 +1 USA</option>
+                  <option value="+44">🇬🇧 +44 UK</option>
+                  <option value="+91">🇧🇩 +880 Bangladesh</option>
+                </select>
+                <input type="tel" id="phoneNumber" class="phone-input" placeholder="9876543210" maxlength="10">
+              </div>
+            </div>
+            
+            <div id="recaptcha-container"></div>
+            
+            <button class="btn btn-primary" onclick="sendOTP()">Send OTP</button>
+            <div id="sendError" class="error-message hidden"></div>
+          </div>
+          
+          <div id="otpLoginSection" class="hidden">
+            <div class="form-group">
+              <label>Enter 6-Digit OTP</label>
+              <input type="text" id="otpCode" class="otp-input" placeholder="000000" maxlength="6">
+            </div>
+            <button class="btn btn-primary" onclick="verifyOTP()">Verify & Sign In</button>
+            <button class="btn" style="background: #e2e8f0; color: #2d3748; margin-top: 8px;" onclick="backToPhoneLogin()">Change Number</button>
+            <div id="verifyError" class="error-message hidden"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- DASHBOARD -->
   <div id="dashboardScreen" class="dashboard">
-    <div class="container">
-      <div class="top-bar">
-        <div>
-          <p><strong id="userPhone"></strong></p>
-          <span class="badge" id="gstinBadge">GSTIN Setup Required</span>
-        </div>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+    <div class="sidebar-layout">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-logo">🏢 Business Suite Pro</div>
+        <ul class="sidebar-menu">
+          <li><a href="javascript:switchPage('dashboard')" class="active" onclick="event.preventDefault(); switchPage('dashboard')">📊 Dashboard</a></li>
+          <li><a href="javascript:switchPage('services')" onclick="event.preventDefault(); switchPage('services')">🛠️ Services</a></li>
+          <li><a href="javascript:switchPage('invoices')" onclick="event.preventDefault(); switchPage('invoices')">📄 Invoices</a></li>
+          <li><a href="javascript:switchPage('customers')" onclick="event.preventDefault(); switchPage('customers')">👥 Customers</a></li>
+          <li><a href="javascript:switchPage('reports')" onclick="event.preventDefault(); switchPage('reports')">📋 Reports</a></li>
+          <li><a href="javascript:switchPage('settings')" onclick="event.preventDefault(); switchPage('settings')">⚙️ Settings</a></li>
+        </ul>
       </div>
-
-      <!-- Business Settings (Collapsible) -->
-      <div class="card">
-        <h3 onclick="toggleBusinessSettings()">⚙️ Business Settings & GSTIN</h3>
-        <div id="businessSettings" style="display:none; margin-top: 15px;">
-          <input type="text" id="businessName" placeholder="Business Name" value="">
-          <input type="text" id="gstin" placeholder="GSTIN (15 digits)" value="">
-          <input type="email" id="businessEmail" placeholder="Business Email" value="">
-          <input type="tel" id="businessPhone" placeholder="Business Phone" value="">
-          <input type="text" id="businessAddress" placeholder="Business Address" value="">
-          <input type="number" id="gstRate" placeholder="GST Rate (%)" value="18">
-          <button onclick="saveBusinessSettings()" class="small-btn">Save Settings</button>
-          <div id="settingsMsg"></div>
+      
+      <!-- Main Content -->
+      <div class="content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+          <div>
+            <h1 style="font-size: 24px; font-weight: 700;">Dashboard</h1>
+          </div>
+          <div class="user-info">
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">Hi, User</div>
+              <div style="font-size: 12px; color: #718096;" id="userPhoneDisplay"></div>
+            </div>
+            <div class="user-avatar" id="userAvatar">U</div>
+            <button class="btn btn-logout" style="width: auto; padding: 8px 16px;" onclick="logout()">Logout</button>
+          </div>
         </div>
-      </div>
-
-      <!-- Summary Cards -->
-      <div class="grid">
-        <div class="card"><h3>💰 Total Revenue</h3><div class="amount" id="totalRevenue">₹0</div></div>
-        <div class="card"><h3>🏦 Total GST Collected</h3><div class="amount" id="totalGST">₹0</div></div>
-        <div class="card"><h3>📊 Net Income</h3><div class="amount" id="netIncome">₹0</div></div>
-        <div class="card"><h3>👥 Customers</h3><div class="amount" id="totalCustomers">0</div></div>
-      </div>
-
-      <!-- Main Tabs -->
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-        <button class="tab-btn" onclick="switchTab('services')">🛠️ Services</button>
-        <button class="tab-btn" onclick="switchTab('invoices')">📄 Invoices</button>
-        <button class="tab-btn" onclick="switchTab('customers')">👥 Customers</button>
-        <button class="tab-btn" onclick="switchTab('reports')">📋 Reports & Tax</button>
-      </div>
-
-      <!-- Dashboard Tab -->
-      <div id="dashboard" class="tab-content active">
-        <div class="chart-container"><h3>Revenue by Service Type</h3><canvas id="chartServices"></canvas></div>
-        <div class="chart-container"><h3>Monthly Revenue Trend</h3><canvas id="chartMonthly"></canvas></div>
-      </div>
-
-      <!-- Services Tab -->
-      <div id="services" class="tab-content">
-        <div class="card">
-          <h3>Add Service Entry</h3>
-          <select id="serviceType">
-            <option value="">Select Service</option>
-            <option value="csc">CSC Service</option>
-            <option value="estamping">E-Stamping</option>
-            <option value="document">Document Writing (Tehsil)</option>
-          </select>
-          <input type="text" id="sacCode" placeholder="SAC Code (e.g., 998312)">
-          <input type="text" id="serviceDesc" placeholder="Service Description">
-          <input type="number" id="serviceAmount" placeholder="Amount (Before GST)">
-          <select id="customerSelect"><option value="">Select/Add Customer</option></select>
-          <button onclick="addService()" class="small-btn">Add Service</button>
-          <div id="serviceMsg"></div>
+        
+        <!-- Dashboard Page -->
+        <div id="dashboard-page">
+          <div class="grid-4">
+            <div class="stat-card">
+              <div class="stat-label">Total Revenue</div>
+              <div class="stat-value" id="totalRevenueCard">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">GST Collected</div>
+              <div class="stat-value" id="totalGSTCard">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Net Income</div>
+              <div class="stat-value" id="netIncomeCard">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Customers</div>
+              <div class="stat-value" id="totalCustomersCard">0</div>
+            </div>
+          </div>
+          
+          <div class="card">
+            <h3>📊 Revenue Overview</h3>
+            <canvas id="chartOverview" style="max-height: 300px;"></canvas>
+          </div>
+          
+          <div class="card">
+            <h3>📈 Monthly Trend</h3>
+            <canvas id="chartTrend" style="max-height: 300px;"></canvas>
+          </div>
         </div>
-
-        <div class="card">
-          <h3>Services List</h3>
-          <div class="table-header"><div>Date</div><div>Type</div><div>Description</div><div>Amount</div><div>GST</div><div>Total</div><div>Action</div></div>
-          <div id="servicesList"></div>
+        
+        <!-- Services Page -->
+        <div id="services-page" class="hidden">
+          <div class="card">
+            <h3>➕ Add New Service</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Service Type</label>
+                <div class="input-wrapper">
+                  <select id="serviceType" onchange="updateSACCode()">
+                    <option value="">Select Service</option>
+                    <option value="csc">CSC Service</option>
+                    <option value="estamping">E-Stamping</option>
+                    <option value="document">Document Writing (Tehsil)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Customer</label>
+                <div class="input-wrapper">
+                  <select id="serviceCustomer">
+                    <option value="">Select Customer</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>SAC Code (Auto-filled)</label>
+                <div class="input-wrapper">
+                  <input type="text" id="serviceSAC" readonly style="background: #f7fafc;">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Amount (Before GST)</label>
+                <div class="input-wrapper">
+                  <input type="number" id="serviceAmount" placeholder="₹ Enter amount">
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group form-group-full">
+              <label>Service Description</label>
+              <div class="input-wrapper">
+                <textarea id="serviceDesc" placeholder="Describe the service..." rows="3"></textarea>
+              </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="addService()">Add Service</button>
+            <div id="serviceMsg" class="success-message hidden"></div>
+          </div>
+          
+          <div class="card">
+            <h3>📋 Recent Services</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Service Type</th>
+                  <th>SAC Code</th>
+                  <th>Amount</th>
+                  <th>GST</th>
+                  <th>Total</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="servicesList">
+                <tr><td colspan="7" class="empty-state-text">No services added yet</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-
-      <!-- Invoices Tab -->
-      <div id="invoices" class="tab-content">
-        <div class="card">
-          <h3>Generate Invoice</h3>
-          <select id="invoiceServices" multiple size="5">
-            <option value="">Select services to invoice...</option>
-          </select>
-          <input type="date" id="invoiceDate">
-          <button onclick="generateInvoice()" class="small-btn">Generate GST Invoice</button>
-          <div id="invoiceMsg"></div>
+        
+        <!-- Invoices Page -->
+        <div id="invoices-page" class="hidden">
+          <div class="card">
+            <h3>📄 Create Invoice</h3>
+            <div class="form-row">
+              <div class="form-group form-group-full">
+                <label>Select Services to Invoice</label>
+                <div class="input-wrapper">
+                  <select id="invoiceServices" multiple style="height: 120px;">
+                    <option value="">Select services...</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="generateInvoice()">📥 Generate GST Invoice (PDF)</button>
+          </div>
+          
+          <div class="card">
+            <h3>📋 All Invoices</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>GST</th>
+                  <th>Total</th>
+                  <th>Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="invoicesList">
+                <tr><td colspan="7" class="empty-state-text">No invoices created yet</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        <div class="card">
-          <h3>All Invoices</h3>
-          <div class="table-header"><div>Invoice #</div><div>Customer</div><div>Amount</div><div>GST</div><div>Total</div><div>Date</div><div>Action</div></div>
-          <div id="invoicesList"></div>
+        
+        <!-- Customers Page -->
+        <div id="customers-page" class="hidden">
+          <div class="card">
+            <h3>➕ Add New Customer</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Customer Name *</label>
+                <div class="input-wrapper">
+                  <input type="text" id="custName" placeholder="Enter name">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <div class="input-wrapper">
+                  <input type="email" id="custEmail" placeholder="customer@example.com">
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Phone</label>
+                <div class="input-wrapper">
+                  <input type="tel" id="custPhone" placeholder="9876543210">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>GSTIN (Optional)</label>
+                <div class="input-wrapper">
+                  <input type="text" id="custGSTIN" placeholder="GSTIN if applicable">
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group form-group-full">
+              <label>Address</label>
+              <div class="input-wrapper">
+                <textarea id="custAddress" placeholder="Enter customer address..." rows="2"></textarea>
+              </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="addCustomer()">Add Customer</button>
+            <div id="custMsg" class="success-message hidden"></div>
+          </div>
+          
+          <div class="card">
+            <h3>👥 Customers</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>GSTIN</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="customersList">
+                <tr><td colspan="5" class="empty-state-text">No customers added yet</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-
-      <!-- Customers Tab -->
-      <div id="customers" class="tab-content">
-        <div class="card">
-          <h3>Add Customer</h3>
-          <input type="text" id="custName" placeholder="Customer Name">
-          <input type="email" id="custEmail" placeholder="Email">
-          <input type="tel" id="custPhone" placeholder="Phone">
-          <input type="text" id="custAddress" placeholder="Address">
-          <input type="text" id="custGSTIN" placeholder="Customer GSTIN (Optional)">
-          <button onclick="addCustomer()" class="small-btn">Add Customer</button>
-          <div id="custMsg"></div>
+        
+        <!-- Reports Page -->
+        <div id="reports-page" class="hidden">
+          <div class="card">
+            <h3>📊 GST Report Generator</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>From Date</label>
+                <div class="input-wrapper">
+                  <input type="date" id="reportStart">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>To Date</label>
+                <div class="input-wrapper">
+                  <input type="date" id="reportEnd">
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="generateGSTReport()">Generate Report</button>
+            <button class="btn" style="background: #eef2ff; color: #667eea; margin-left: 8px;" onclick="exportTaxCSV()">📊 Export CSV</button>
+            <div id="reportMsg" class="success-message hidden"></div>
+          </div>
+          
+          <div class="card" id="reportContent"></div>
         </div>
-
-        <div class="card">
-          <h3>Customers</h3>
-          <div class="table-header"><div>Name</div><div>Email</div><div>Phone</div><div>GSTIN</div><div>Action</div></div>
-          <div id="customersList"></div>
+        
+        <!-- Settings Page -->
+        <div id="settings-page" class="hidden">
+          <div class="card">
+            <h3>⚙️ Business Settings</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Business Name</label>
+                <div class="input-wrapper">
+                  <input type="text" id="businessName" placeholder="Your business name">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>GSTIN</label>
+                <div class="input-wrapper">
+                  <input type="text" id="gstin" placeholder="15-digit GSTIN">
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Email</label>
+                <div class="input-wrapper">
+                  <input type="email" id="businessEmail" placeholder="business@example.com">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <div class="input-wrapper">
+                  <input type="tel" id="businessPhone" placeholder="Business phone">
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group form-group-full">
+              <label>Business Address</label>
+              <div class="input-wrapper">
+                <textarea id="businessAddress" placeholder="Full business address..." rows="2"></textarea>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Default GST Rate (%)</label>
+              <div class="input-wrapper">
+                <input type="number" id="gstRate" value="18" min="0" max="100">
+              </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="saveBusinessSettings()">Save Settings</button>
+            <div id="settingsMsg" class="success-message hidden"></div>
+          </div>
         </div>
-      </div>
-
-      <!-- Reports & Tax Tab -->
-      <div id="reports" class="tab-content">
-        <div class="card">
-          <h3>GST Report Generator</h3>
-          <input type="date" id="reportStart">
-          <input type="date" id="reportEnd">
-          <button onclick="generateGSTReport()" class="small-btn">Generate GST Report</button>
-          <button onclick="generateITCReport()" class="small-btn">Generate ITC Report</button>
-          <button onclick="exportTaxCSV()" class="small-btn">📊 Export Tax Data CSV</button>
-          <div id="reportMsg"></div>
-        </div>
-
-        <div class="card" id="taxReportContent"></div>
       </div>
     </div>
   </div>
@@ -218,39 +527,51 @@
     let confirmationResult, currentUser = null;
     let services = [], customers = [], invoices = [];
     let businessSettings = {};
-    let chartServices, chartMonthly;
+    let chartOverview, chartTrend;
 
     const SAC_CODES = {
-      'csc': '998312',
-      'estamping': '998361',
-      'document': '998399'
-    };
-
-    const SERVICE_NAMES = {
-      'csc': 'CSC Service',
-      'estamping': 'E-Stamping',
-      'document': 'Document Writing'
+      'csc': { code: '998312', name: 'CSC Service' },
+      'estamping': { code: '998361', name: 'E-Stamping' },
+      'document': { code: '998399', name: 'Document Writing' }
     };
 
     function sendOTP() {
+      const countryCode = document.getElementById('countryCode').value;
       const phone = document.getElementById('phoneNumber').value;
-      if (!phone) { alert('Enter phone'); return; }
+      const fullPhone = countryCode + phone;
+      
+      if (!phone) { showError('sendError', 'Enter phone number'); return; }
+      if (phone.length < 10) { showError('sendError', 'Enter valid phone number'); return; }
+      
       const appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
-      auth.signInWithPhoneNumber(phone, appVerifier)
+      auth.signInWithPhoneNumber(fullPhone, appVerifier)
         .then(r => {
           confirmationResult = r;
-          document.getElementById('loginSection').classList.add('hidden');
-          document.getElementById('otpSection').classList.remove('hidden');
+          document.getElementById('phoneLoginSection').classList.add('hidden');
+          document.getElementById('otpLoginSection').classList.remove('hidden');
         })
-        .catch(e => alert('Error: ' + e.message));
+        .catch(e => showError('sendError', e.message));
+    }
+
+    function backToPhoneLogin() {
+      document.getElementById('otpLoginSection').classList.add('hidden');
+      document.getElementById('phoneLoginSection').classList.remove('hidden');
+      document.getElementById('phoneNumber').value = '';
     }
 
     function verifyOTP() {
       const otp = document.getElementById('otpCode').value;
-      if (otp.length !== 6) { alert('Enter 6-digit OTP'); return; }
+      if (otp.length !== 6) { showError('verifyError', 'Enter 6-digit OTP'); return; }
+      
       confirmationResult.confirm(otp)
         .then(r => { currentUser = r.user; showDashboard(); })
-        .catch(e => alert('Invalid OTP'));
+        .catch(e => showError('verifyError', 'Invalid OTP. Try again'));
+    }
+
+    function showError(elementId, msg) {
+      const elem = document.getElementById(elementId);
+      elem.textContent = msg;
+      elem.classList.remove('hidden');
     }
 
     auth.onAuthStateChanged(user => {
@@ -259,15 +580,15 @@
     });
 
     function showDashboard() {
-      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboardScreen').classList.add('active');
-      document.getElementById('userPhone').textContent = currentUser.phoneNumber;
+      document.getElementById('userPhoneDisplay').textContent = currentUser.phoneNumber;
       loadAllData();
     }
 
     function showLogin() {
       document.getElementById('dashboardScreen').classList.remove('active');
-      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('loginScreen').style.display = 'block';
     }
 
     async function loadAllData() {
@@ -276,10 +597,7 @@
       await loadCustomers();
       await loadInvoices();
       updateCards();
-      displayServices();
-      displayCustomers();
-      displayInvoices();
-      updateCharts();
+      updateAllUI();
     }
 
     async function loadBusinessSettings() {
@@ -293,10 +611,6 @@
           document.getElementById('businessPhone').value = businessSettings.phone || '';
           document.getElementById('businessAddress').value = businessSettings.address || '';
           document.getElementById('gstRate').value = businessSettings.gstRate || '18';
-          if (businessSettings.gstin) {
-            document.getElementById('gstinBadge').textContent = 'GSTIN: ' + businessSettings.gstin;
-            document.getElementById('gstinBadge').style.background = '#10b981';
-          }
         }
       } catch (e) { console.error(e); }
     }
@@ -313,18 +627,18 @@
       try {
         await db.collection('users').doc(currentUser.uid).collection('settings').doc('business').set(settings);
         businessSettings = settings;
-        document.getElementById('settingsMsg').textContent = '✅ Settings Saved!';
-        document.getElementById('settingsMsg').className = 'success';
-        setTimeout(() => { document.getElementById('settingsMsg').textContent = ''; loadAllData(); }, 2000);
+        showSuccess('settingsMsg', 'Settings saved successfully!');
+        setTimeout(() => loadAllData(), 1500);
       } catch (e) {
-        document.getElementById('settingsMsg').textContent = '❌ Error: ' + e.message;
-        document.getElementById('settingsMsg').className = 'error';
+        showError('settingsMsg', 'Error: ' + e.message);
       }
     }
 
-    function toggleBusinessSettings() {
-      const elem = document.getElementById('businessSettings');
-      elem.style.display = elem.style.display === 'none' ? 'block' : 'none';
+    function showSuccess(elementId, msg) {
+      const elem = document.getElementById(elementId);
+      elem.textContent = msg;
+      elem.classList.remove('hidden');
+      setTimeout(() => elem.classList.add('hidden'), 3000);
     }
 
     async function loadServices() {
@@ -338,7 +652,6 @@
       try {
         const snap = await db.collection('users').doc(currentUser.uid).collection('customers').get();
         customers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        populateCustomerSelect();
       } catch (e) { customers = []; }
     }
 
@@ -349,13 +662,24 @@
       } catch (e) { invoices = []; }
     }
 
+    function updateSACCode() {
+      const serviceType = document.getElementById('serviceType').value;
+      const sacInput = document.getElementById('serviceSAC');
+      if (SAC_CODES[serviceType]) {
+        sacInput.value = SAC_CODES[serviceType].code;
+      } else {
+        sacInput.value = '';
+      }
+    }
+
     async function addCustomer() {
       const name = document.getElementById('custName').value;
       const email = document.getElementById('custEmail').value;
       const phone = document.getElementById('custPhone').value;
       const address = document.getElementById('custAddress').value;
       const gstin = document.getElementById('custGSTIN').value;
-      if (!name) { alert('Enter customer name'); return; }
+      
+      if (!name) { showError('custMsg', 'Customer name is required'); return; }
       try {
         await db.collection('users').doc(currentUser.uid).collection('customers').add({
           name, email, phone, address, gstin, createdAt: new Date()
@@ -365,91 +689,130 @@
         document.getElementById('custPhone').value = '';
         document.getElementById('custAddress').value = '';
         document.getElementById('custGSTIN').value = '';
+        showSuccess('custMsg', 'Customer added!');
         loadAllData();
-      } catch (e) { alert('Error: ' + e.message); }
+      } catch (e) { showError('custMsg', 'Error: ' + e.message); }
     }
 
-    function populateCustomerSelect() {
-      const sel = document.getElementById('customerSelect');
+    function updateAllUI() {
+      updateServicesList();
+      updateCustomersList();
+      updateInvoicesList();
+      updateServiceCustomerSelect();
+      updateInvoiceServicesSelect();
+      updateCharts();
+    }
+
+    function updateServiceCustomerSelect() {
+      const sel = document.getElementById('serviceCustomer');
       sel.innerHTML = '<option value="">Select Customer</option>';
       customers.forEach(c => {
         sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
       });
     }
 
-    function displayCustomers() {
-      let html = '';
-      customers.forEach(c => {
-        html += `<div class="table-row"><div>${c.name}</div><div>${c.email || '-'}</div><div>${c.phone || '-'}</div><div>${c.gstin || '-'}</div><div><button class="small-btn" onclick="deleteCustomer('${c.id}')">Delete</button></div></div>`;
+    function updateInvoiceServicesSelect() {
+      const sel = document.getElementById('invoiceServices');
+      sel.innerHTML = '';
+      services.forEach(s => {
+        const custName = customers.find(c => c.id === s.customerId)?.name || 'Unknown';
+        sel.innerHTML += `<option value="${s.id}">${s.description} - ₹${s.totalAmount.toFixed(2)} (${custName})</option>`;
       });
-      document.getElementById('customersList').innerHTML = html || '<div class="table-row">No customers</div>';
-    }
-
-    async function deleteCustomer(id) {
-      if (!confirm('Delete customer?')) return;
-      try {
-        await db.collection('users').doc(currentUser.uid).collection('customers').doc(id).delete();
-        loadAllData();
-      } catch (e) { alert('Error: ' + e.message); }
     }
 
     async function addService() {
       const serviceType = document.getElementById('serviceType').value;
-      const serviceDesc = document.getElementById('serviceDesc').value;
+      const customerId = document.getElementById('serviceCustomer').value;
       const amount = parseFloat(document.getElementById('serviceAmount').value);
-      const customerId = document.getElementById('customerSelect').value;
-      if (!serviceType || !amount || !customerId) { alert('Fill all fields'); return; }
-
+      const desc = document.getElementById('serviceDesc').value;
+      
+      if (!serviceType || !customerId || !amount) { showError('serviceMsg', 'Fill all required fields'); return; }
+      
       const gstRate = businessSettings.gstRate || 18;
       const gstAmount = (amount * gstRate) / 100;
       const totalAmount = amount + gstAmount;
-
+      
       try {
         await db.collection('users').doc(currentUser.uid).collection('services').add({
           serviceType,
-          description: serviceDesc,
-          sacCode: SAC_CODES[serviceType],
+          description: desc,
+          sacCode: SAC_CODES[serviceType].code,
+          customerId,
           amount,
           gstRate,
           gstAmount,
           totalAmount,
-          customerId,
           date: new Date()
         });
-        document.getElementById('serviceDesc').value = '';
         document.getElementById('serviceAmount').value = '';
+        document.getElementById('serviceDesc').value = '';
+        showSuccess('serviceMsg', 'Service added!');
         loadAllData();
-      } catch (e) { alert('Error: ' + e.message); }
+      } catch (e) { showError('serviceMsg', 'Error: ' + e.message); }
     }
 
-    function displayServices() {
-      let html = '';
-      services.forEach(s => {
+    function updateServicesList() {
+      const tbody = document.getElementById('servicesList');
+      if (services.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state-text">No services added yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = services.map(s => {
         const date = s.date.toDate ? s.date.toDate().toLocaleDateString() : new Date(s.date).toLocaleDateString();
-        html += `<div class="table-row"><div>${date}</div><div>${SERVICE_NAMES[s.serviceType]}</div><div>${s.description}</div><div>₹${s.amount}</div><div>₹${s.gstAmount.toFixed(2)}</div><div>₹${s.totalAmount.toFixed(2)}</div><div><button class="small-btn" onclick="deleteService('${s.id}')">Delete</button></div></div>`;
-      });
-      document.getElementById('servicesList').innerHTML = html || '<div class="table-row">No services</div>';
+        return `<tr>
+          <td>${date}</td>
+          <td>${SAC_CODES[s.serviceType]?.name || s.serviceType}</td>
+          <td><span class="badge badge-blue">${s.sacCode}</span></td>
+          <td>₹${s.amount.toFixed(2)}</td>
+          <td>₹${s.gstAmount.toFixed(2)}</td>
+          <td>₹${s.totalAmount.toFixed(2)}</td>
+          <td><button class="btn" style="width: auto; padding: 6px 12px; font-size: 12px; background: #fed7d7; color: #c53030;" onclick="deleteService('${s.id}')">Delete</button></td>
+        </tr>`;
+      }).join('');
     }
 
     async function deleteService(id) {
-      if (!confirm('Delete service?')) return;
+      if (!confirm('Delete this service?')) return;
       try {
         await db.collection('users').doc(currentUser.uid).collection('services').doc(id).delete();
         loadAllData();
       } catch (e) { alert('Error: ' + e.message); }
     }
 
-    async function generateInvoice() {
-      const selectedIndices = Array.from(document.getElementById('invoiceServices').selectedOptions).map(opt => opt.value);
-      if (selectedIndices.length === 0) { alert('Select services'); return; }
+    function updateCustomersList() {
+      const tbody = document.getElementById('customersList');
+      if (customers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state-text">No customers added yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = customers.map(c => `<tr>
+        <td><strong>${c.name}</strong></td>
+        <td>${c.email || '-'}</td>
+        <td>${c.phone || '-'}</td>
+        <td>${c.gstin ? '<span class="badge badge-green">' + c.gstin + '</span>' : '-'}</td>
+        <td><button class="btn" style="width: auto; padding: 6px 12px; font-size: 12px; background: #fed7d7; color: #c53030;" onclick="deleteCustomer('${c.id}')">Delete</button></td>
+      </tr>`).join('');
+    }
 
-      const selectedServices = services.filter(s => selectedIndices.includes(s.id));
+    async function deleteCustomer(id) {
+      if (!confirm('Delete this customer?')) return;
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('customers').doc(id).delete();
+        loadAllData();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    async function generateInvoice() {
+      const selectedIds = Array.from(document.getElementById('invoiceServices').selectedOptions).map(opt => opt.value);
+      if (selectedIds.length === 0) { alert('Select services to invoice'); return; }
+      
+      const selectedServices = services.filter(s => selectedIds.includes(s.id));
       let totalAmount = 0, totalGST = 0;
       selectedServices.forEach(s => {
         totalAmount += s.amount;
         totalGST += s.gstAmount;
       });
-
+      
       const invoiceNum = 'INV-' + Date.now();
       const invoice = {
         invoiceNumber: invoiceNum,
@@ -459,7 +822,7 @@
         total: totalAmount + totalGST,
         date: new Date()
       };
-
+      
       try {
         await db.collection('users').doc(currentUser.uid).collection('invoices').add(invoice);
         downloadGSTInvoice(invoice);
@@ -469,54 +832,66 @@
 
     function downloadGSTInvoice(invoice) {
       let html = `<div style="padding: 40px; font-family: Arial;">
-        <h2 style="text-align: center; border-bottom: 2px solid #667eea; padding-bottom: 20px;">GST INVOICE</h2>
-        <p style="text-align: center;"><strong>${businessSettings.name}</strong></p>
-        <p style="text-align: center;">GSTIN: ${businessSettings.gstin}</p>
-        <p style="text-align: center;">${businessSettings.address}</p>
-        <p style="text-align: center; margin-top: 20px;"><strong>Invoice #: ${invoice.invoiceNumber}</strong></p>
-        <p style="text-align: center;">Date: ${new Date(invoice.date).toLocaleDateString()}</p>
+        <h2 style="text-align: center; border-bottom: 3px solid #667eea; padding-bottom: 20px; color: #1a202c;">GST INVOICE</h2>
+        <p style="text-align: center; font-weight: bold; font-size: 16px;">${businessSettings.name || 'Business Name'}</p>
+        <p style="text-align: center; color: #718096;">GSTIN: ${businessSettings.gstin || 'N/A'}</p>
+        <p style="text-align: center; color: #718096;">${businessSettings.address || ''}</p>
+        <p style="text-align: center; margin-top: 20px; font-weight: bold;">Invoice #: ${invoice.invoiceNumber}</p>
+        <p style="text-align: center; color: #718096;">Date: ${new Date(invoice.date).toLocaleDateString()}</p>
         
         <table style="width: 100%; border-collapse: collapse; margin: 30px 0;">
-          <tr style="background: #f0f0f0;">
-            <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Description</th>
-            <th style="border: 1px solid #ddd; padding: 10px;">SAC Code</th>
-            <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">Amount</th>
-            <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">GST ${businessSettings.gstRate}%</th>
-            <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">Total</th>
+          <tr style="background: #f7fafc; font-weight: bold;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Description</th>
+            <th style="border: 1px solid #ddd; padding: 12px;">SAC Code</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: right;">Amount</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: right;">GST (${businessSettings.gstRate || 18}%)</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: right;">Total</th>
           </tr>`;
       
       invoice.services.forEach(s => {
         html += `<tr>
-          <td style="border: 1px solid #ddd; padding: 10px;">${s.description}</td>
-          <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${s.sacCode}</td>
-          <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">₹${s.amount.toFixed(2)}</td>
-          <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">₹${s.gstAmount.toFixed(2)}</td>
-          <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">₹${s.totalAmount.toFixed(2)}</td>
+          <td style="border: 1px solid #ddd; padding: 12px;">${s.description}</td>
+          <td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><strong>${s.sacCode}</strong></td>
+          <td style="border: 1px solid #ddd; padding: 12px; text-align: right;">₹${s.amount.toFixed(2)}</td>
+          <td style="border: 1px solid #ddd; padding: 12px; text-align: right;">₹${s.gstAmount.toFixed(2)}</td>
+          <td style="border: 1px solid #ddd; padding: 12px; text-align: right;">₹${s.totalAmount.toFixed(2)}</td>
         </tr>`;
       });
 
       html += `</table>
-        <div style="text-align: right; margin-top: 20px;">
-          <p><strong>Subtotal: ₹${invoice.subtotal.toFixed(2)}</strong></p>
-          <p><strong>GST: ₹${invoice.gst.toFixed(2)}</strong></p>
-          <p style="font-size: 18px; color: #667eea;"><strong>TOTAL: ₹${invoice.total.toFixed(2)}</strong></p>
+        <div style="margin-top: 30px; text-align: right;">
+          <p style="margin: 8px 0;"><strong>Subtotal: ₹${invoice.subtotal.toFixed(2)}</strong></p>
+          <p style="margin: 8px 0;"><strong>GST: ₹${invoice.gst.toFixed(2)}</strong></p>
+          <p style="margin: 12px 0; font-size: 18px; color: #667eea; font-weight: bold; padding-top: 12px; border-top: 2px solid #ddd;">TOTAL: ₹${invoice.total.toFixed(2)}</p>
         </div>
+        <p style="margin-top: 30px; text-align: center; color: #718096; font-size: 12px;">Thank you for your business!</p>
       </div>`;
 
       const opt = { margin: 10, filename: invoice.invoiceNumber + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { format: 'a4' } };
       html2pdf().set(opt).from(html).save();
     }
 
-    function displayInvoices() {
-      let html = '';
-      invoices.forEach(inv => {
+    function updateInvoicesList() {
+      const tbody = document.getElementById('invoicesList');
+      if (invoices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state-text">No invoices created yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = invoices.map(inv => {
         const date = inv.date.toDate ? inv.date.toDate().toLocaleDateString() : new Date(inv.date).toLocaleDateString();
-        html += `<div class="table-row"><div>${inv.invoiceNumber}</div><div>${inv.services.length} items</div><div>₹${inv.subtotal.toFixed(2)}</div><div>₹${inv.gst.toFixed(2)}</div><div>₹${inv.total.toFixed(2)}</div><div>${date}</div><div><button class="small-btn" onclick="redownloadInvoice('${inv.invoiceNumber}')">PDF</button></div></div>`;
-      });
-      document.getElementById('invoicesList').innerHTML = html || '<div class="table-row">No invoices</div>';
+        return `<tr>
+          <td><strong>${inv.invoiceNumber}</strong></td>
+          <td>${inv.services.length} items</td>
+          <td>₹${inv.subtotal.toFixed(2)}</td>
+          <td>₹${inv.gst.toFixed(2)}</td>
+          <td>₹${inv.total.toFixed(2)}</td>
+          <td>${date}</td>
+          <td><button class="btn" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="downloadInvoiceAgain('${inv.invoiceNumber}')">📥 PDF</button></td>
+        </tr>`;
+      }).join('');
     }
 
-    function redownloadInvoice(invNum) {
+    function downloadInvoiceAgain(invNum) {
       const inv = invoices.find(i => i.invoiceNumber === invNum);
       if (inv) downloadGSTInvoice(inv);
     }
@@ -527,45 +902,58 @@
         totalRevenue += s.amount;
         totalGST += s.gstAmount;
       });
-      document.getElementById('totalRevenue').textContent = '₹' + totalRevenue.toLocaleString();
-      document.getElementById('totalGST').textContent = '₹' + totalGST.toFixed(2);
-      document.getElementById('netIncome').textContent = '₹' + (totalRevenue).toLocaleString();
-      document.getElementById('totalCustomers').textContent = customers.length;
+      document.getElementById('totalRevenueCard').textContent = '₹' + totalRevenue.toLocaleString('en-IN');
+      document.getElementById('totalGSTCard').textContent = '₹' + totalGST.toFixed(0);
+      document.getElementById('netIncomeCard').textContent = '₹' + totalRevenue.toLocaleString('en-IN');
+      document.getElementById('totalCustomersCard').textContent = customers.length;
     }
 
     function updateCharts() {
       const serviceData = { csc: 0, estamping: 0, document: 0 };
       services.forEach(s => {
-        serviceData[s.serviceType] += s.amount;
+        serviceData[s.serviceType] = (serviceData[s.serviceType] || 0) + s.amount;
       });
 
-      if (chartServices) chartServices.destroy();
-      const ctx1 = document.getElementById('chartServices');
-      chartServices = new Chart(ctx1, {
-        type: 'pie',
+      if (chartOverview) chartOverview.destroy();
+      const ctx1 = document.getElementById('chartOverview');
+      chartOverview = new Chart(ctx1, {
+        type: 'doughnut',
         data: {
-          labels: ['CSC', 'E-Stamping', 'Document Writing'],
-          datasets: [{ data: [serviceData.csc, serviceData.estamping, serviceData.document], backgroundColor: ['#667eea', '#764ba2', '#f59e0b'], borderRadius: 6 }]
+          labels: ['CSC Services', 'E-Stamping', 'Document Writing'],
+          datasets: [{ 
+            data: [serviceData.csc || 0, serviceData.estamping || 0, serviceData.document || 0], 
+            backgroundColor: ['#667eea', '#764ba2', '#f59e0b'], 
+            borderRadius: 8,
+            borderWidth: 2,
+            borderColor: 'white'
+          }]
         },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
       });
 
       const monthlyData = {};
       services.forEach(s => {
         const date = s.date.toDate ? s.date.toDate() : new Date(s.date);
         const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (!monthlyData[monthYear]) monthlyData[monthYear] = 0;
-        monthlyData[monthYear] += s.amount;
+        monthlyData[monthYear] = (monthlyData[monthYear] || 0) + s.amount;
       });
 
       const monthLabels = Object.keys(monthlyData);
-      if (chartMonthly) chartMonthly.destroy();
-      const ctx2 = document.getElementById('chartMonthly');
-      chartMonthly = new Chart(ctx2, {
+      if (chartTrend) chartTrend.destroy();
+      const ctx2 = document.getElementById('chartTrend');
+      chartTrend = new Chart(ctx2, {
         type: 'line',
         data: {
           labels: monthLabels,
-          datasets: [{ label: 'Revenue', data: monthLabels.map(m => monthlyData[m]), borderColor: '#667eea', tension: 0.4, borderWidth: 2, fill: false }]
+          datasets: [{ 
+            label: 'Monthly Revenue', 
+            data: monthLabels.map(m => monthlyData[m]), 
+            borderColor: '#667eea', 
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4, 
+            borderWidth: 3,
+            fill: true
+          }]
         },
         options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
       });
@@ -574,7 +962,7 @@
     function generateGSTReport() {
       const start = new Date(document.getElementById('reportStart').value);
       const end = new Date(document.getElementById('reportEnd').value);
-      if (!start || !end) { alert('Select dates'); return; }
+      if (!start || !end) { alert('Select date range'); return; }
 
       let cscAmount = 0, cscGST = 0, estampAmount = 0, estampGST = 0, docAmount = 0, docGST = 0;
       services.forEach(s => {
@@ -589,32 +977,28 @@
       const totalAmount = cscAmount + estampAmount + docAmount;
       const totalGST = cscGST + estampGST + docGST;
 
-      let html = `<div class="tax-summary">
-        <h3>GST Report: ${start.toLocaleDateString()} to ${end.toLocaleDateString()}</h3>
-        <p><span class="bold">GSTIN:</span> ${businessSettings.gstin}</p>
-        <p><span class="bold">Business:</span> ${businessSettings.name}</p>
-        <hr style="margin: 15px 0;">
-        <h4>Service-wise Breakdown:</h4>
-        <p>CSC Services: ₹${cscAmount.toFixed(2)} | GST: ₹${cscGST.toFixed(2)} | Total: ₹${(cscAmount + cscGST).toFixed(2)}</p>
-        <p>E-Stamping: ₹${estampAmount.toFixed(2)} | GST: ₹${estampGST.toFixed(2)} | Total: ₹${(estampAmount + estampGST).toFixed(2)}</p>
-        <p>Document Writing: ₹${docAmount.toFixed(2)} | GST: ₹${docGST.toFixed(2)} | Total: ₹${(docAmount + docGST).toFixed(2)}</p>
-        <hr style="margin: 15px 0;">
-        <p><span class="bold" style="font-size: 16px;">Total Revenue: ₹${totalAmount.toFixed(2)}</span></p>
-        <p><span class="bold" style="font-size: 16px;">Total GST Collected: ₹${totalGST.toFixed(2)}</span></p>
-        <p><span class="bold" style="font-size: 16px; color: #10b981;">Grand Total: ₹${(totalAmount + totalGST).toFixed(2)}</span></p>
-      </div>`;
-      document.getElementById('taxReportContent').innerHTML = html;
-    }
-
-    function generateITCReport() {
-      alert('ITC Report: Track Input Tax Credit - Document all purchases with GST invoices');
+      let html = `<h3>📊 GST Report: ${start.toLocaleDateString()} to ${end.toLocaleDateString()}</h3>
+        <div style="margin-top: 20px;">
+          <p><strong>GSTIN:</strong> ${businessSettings.gstin || 'N/A'}</p>
+          <p><strong>Business:</strong> ${businessSettings.name || 'Your Business'}</p>
+          <hr style="margin: 20px 0;">
+          <h4>Service-wise Breakdown:</h4>
+          <p>CSC Services: ₹${cscAmount.toFixed(2)} | GST: ₹${cscGST.toFixed(2)} | Total: ₹${(cscAmount + cscGST).toFixed(2)}</p>
+          <p>E-Stamping: ₹${estampAmount.toFixed(2)} | GST: ₹${estampGST.toFixed(2)} | Total: ₹${(estampAmount + estampGST).toFixed(2)}</p>
+          <p>Document Writing: ₹${docAmount.toFixed(2)} | GST: ₹${docGST.toFixed(2)} | Total: ₹${(docAmount + docGST).toFixed(2)}</p>
+          <hr style="margin: 20px 0;">
+          <p style="font-weight: bold; font-size: 16px;">Total Revenue: ₹${totalAmount.toFixed(2)}</p>
+          <p style="font-weight: bold; font-size: 16px;">Total GST Collected: ₹${totalGST.toFixed(2)}</p>
+          <p style="font-weight: bold; font-size: 18px; color: #667eea; margin-top: 10px;">Grand Total: ₹${(totalAmount + totalGST).toFixed(2)}</p>
+        </div>`;
+      document.getElementById('reportContent').innerHTML = html;
     }
 
     function exportTaxCSV() {
       let csv = 'Service Type,SAC Code,Date,Amount,GST Rate,GST Amount,Total Amount\n';
       services.forEach(s => {
         const date = s.date.toDate ? s.date.toDate().toLocaleDateString() : new Date(s.date).toLocaleDateString();
-        csv += `"${SERVICE_NAMES[s.serviceType]}","${s.sacCode}","${date}","${s.amount}","${s.gstRate}%","${s.gstAmount}","${s.totalAmount}"\n`;
+        csv += `"${SAC_CODES[s.serviceType]?.name || s.serviceType}","${s.sacCode}","${date}","${s.amount}","${s.gstRate}%","${s.gstAmount}","${s.totalAmount}"\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
@@ -624,12 +1008,11 @@
       a.click();
     }
 
-    function switchTab(name) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(name).classList.add('active');
+    function switchPage(pageName) {
+      document.querySelectorAll('[id$="-page"]').forEach(p => p.classList.add('hidden'));
+      document.getElementById(pageName + '-page').classList.remove('hidden');
+      document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
       event.target.classList.add('active');
-      if (name === 'dashboard') updateCharts();
     }
 
     function logout() {
