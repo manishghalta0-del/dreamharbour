@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dream Harbour - Complete Service Management</title>
+  <title>Dream Harbor - Complete Service Management</title>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -225,13 +225,18 @@
       box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
     }
     
-    .send-otp-btn:hover {
+    .send-otp-btn:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 6px 25px rgba(30, 64, 175, 0.4);
     }
     
-    .send-otp-btn:active {
+    .send-otp-btn:active:not(:disabled) {
       transform: translateY(0);
+    }
+    
+    .send-otp-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
     
     .otp-section {
@@ -254,6 +259,11 @@
       box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
     }
     
+    .otp-input.error {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+    
     .verify-otp-btn {
       width: 100%;
       padding: 14px 20px;
@@ -270,9 +280,14 @@
       box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
     }
     
-    .verify-otp-btn:hover {
+    .verify-otp-btn:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 6px 25px rgba(5, 150, 105, 0.4);
+    }
+    
+    .verify-otp-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
     
     .security-badge {
@@ -287,6 +302,34 @@
     
     .security-badge::before {
       content: '🔒';
+    }
+    
+    .error-message {
+      color: #dc2626;
+      font-size: 12px;
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      background: #fee2e2;
+      border-radius: 6px;
+      display: none;
+    }
+    
+    .error-message.show {
+      display: block;
+    }
+    
+    .success-message {
+      color: #059669;
+      font-size: 12px;
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      background: #d1fae5;
+      border-radius: 6px;
+      display: none;
+    }
+    
+    .success-message.show {
+      display: block;
     }
     
     .dashboard { display: none; }
@@ -559,6 +602,10 @@
       background: #f7fafc;
     }
     
+    #recaptcha-container {
+      display: none;
+    }
+    
     @keyframes slideInDown {
       from {
         opacity: 0;
@@ -591,15 +638,18 @@
 </head>
 <body>
 
+<!-- RECAPTCHA CONTAINER -->
+<div id="recaptcha-container"></div>
+
 <!-- LOGIN PAGE -->
 <div class="login-wrapper" id="loginPage">
   <div class="login-side">
     <div class="login-side-content">
       <div class="logo-section">
         <div class="logo-img" id="logoDisplay">
-          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%231e40af' width='100' height='100' rx='15'/%3E%3Cpath fill='%23fff' d='M50 20c-8 0-15 5-18 12l-2 4v30l2 4c3 7 10 12 18 12s15-5 18-12l2-4V36l-2-4c-3-7-10-12-18-12z' opacity='0.8'/%3E%3Ccircle cx='50' cy='45' r='6' fill='%23fff' opacity='0.6'/%3E%3C/svg%3E" alt="Dream Harbour">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%231e40af' width='100' height='100' rx='15'/%3E%3Cpath fill='%23fff' d='M50 20c-8 0-15 5-18 12l-2 4v30l2 4c3 7 10 12 18 12s15-5 18-12l2-4V36l-2-4c-3-7-10-12-18-12z' opacity='0.8'/%3E%3Ccircle cx='50' cy='45' r='6' fill='%23fff' opacity='0.6'/%3E%3C/svg%3E" alt="Dream Harbor">
         </div>
-        <div class="brand-title">Dream Harbour</div>
+        <div class="brand-title">Dream Harbor</div>
         <div class="brand-subtitle">Complete Service Management</div>
       </div>
       
@@ -627,28 +677,34 @@
       </div>
       
       <form id="loginForm">
-        <div class="form-group">
-          <label>PHONE NUMBER</label>
-          <div class="phone-input-wrapper">
-            <select id="countryCode" class="country-code">
-              <option value="+91">IN +91</option>
-              <option value="+1">US +1</option>
-              <option value="+44">UK +44</option>
-              <option value="+61">AU +61</option>
-              <option value="+971">AE +971</option>
-            </select>
-            <input type="tel" id="phoneNumber" class="phone-input" placeholder="9876543210" required>
-          </div>
-        </div>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
         
-        <button type="button" class="send-otp-btn" id="sendOtpBtn">Send OTP</button>
+        <div id="phoneSection">
+          <div class="form-group">
+            <label>PHONE NUMBER</label>
+            <div class="phone-input-wrapper">
+              <select id="countryCode" class="country-code">
+                <option value="+91">IN +91</option>
+                <option value="+1">US +1</option>
+                <option value="+44">UK +44</option>
+                <option value="+61">AU +61</option>
+                <option value="+971">AE +971</option>
+              </select>
+              <input type="tel" id="phoneNumber" class="phone-input" placeholder="9876543210" required>
+            </div>
+          </div>
+          
+          <button type="button" class="send-otp-btn" id="sendOtpBtn">Send OTP</button>
+        </div>
         
         <div class="otp-section" id="otpSection">
           <div class="form-group">
             <label>OTP</label>
-            <input type="text" id="otpInput" class="otp-input" placeholder="Enter 6-digit OTP" required>
+            <input type="text" id="otpInput" class="otp-input" placeholder="Enter 6-digit OTP" maxlength="6" required>
           </div>
           <button type="button" class="verify-otp-btn" id="verifyOtpBtn">Verify & Login</button>
+          <button type="button" class="btn" id="resendOtpBtn" style="width: 100%; margin-top: 10px; background: #f3f4f6; color: #4b5563;">Resend OTP</button>
         </div>
         
         <div class="security-badge">
@@ -665,7 +721,7 @@
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-logo">DH</div>
-        <div class="sidebar-title">Dream Harbour</div>
+        <div class="sidebar-title">Dream Harbor</div>
       </div>
       <nav id="mainNav">
         <div class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</div>
@@ -925,7 +981,7 @@
               <div class="form-row">
                 <div class="form-field">
                   <label>Business Name</label>
-                  <input type="text" id="businessName" placeholder="Dream Harbour">
+                  <input type="text" id="businessName" placeholder="Dream Harbor">
                 </div>
                 <div class="form-field">
                   <label>GSTIN</label>
@@ -984,6 +1040,8 @@ let currentUser = null;
 let servicesData = [];
 let customersData = [];
 let invoicesData = [];
+let recaptchaVerifier = null;
+let confirmationResult = null;
 
 const SERVICESDATABASE = {
   'Photocopy': { sac: '998341', gst: 5 },
@@ -996,44 +1054,157 @@ const SERVICESDATABASE = {
   'Consultation': { sac: '998341', gst: 5 }
 };
 
-// Authentication
+// Helper functions for messages
+function showError(message) {
+  const errorEl = document.getElementById('errorMessage');
+  errorEl.textContent = message;
+  errorEl.classList.add('show');
+  setTimeout(() => {
+    errorEl.classList.remove('show');
+  }, 5000);
+}
+
+function showSuccess(message) {
+  const successEl = document.getElementById('successMessage');
+  successEl.textContent = message;
+  successEl.classList.add('show');
+  setTimeout(() => {
+    successEl.classList.remove('show');
+  }, 3000);
+}
+
+// Initialize Recaptcha Verifier
+function initRecaptcha() {
+  if (recaptchaVerifier) {
+    recaptchaVerifier.clear();
+  }
+  
+  recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    size: 'invisible',
+    callback: () => {
+      console.log('reCAPTCHA verified');
+    },
+    'expired-callback': () => {
+      console.log('reCAPTCHA expired');
+      recaptchaVerifier = null;
+    }
+  });
+}
+
+// Clear login form
+function resetLoginForm() {
+  document.getElementById('phoneNumber').value = '';
+  document.getElementById('countryCode').value = '+91';
+  document.getElementById('otpInput').value = '';
+  document.getElementById('otpSection').style.display = 'none';
+  document.getElementById('phoneSection').style.display = 'block';
+  document.getElementById('errorMessage').classList.remove('show');
+  document.getElementById('successMessage').classList.remove('show');
+  document.getElementById('otpInput').classList.remove('error');
+  confirmationResult = null;
+}
+
+// Authentication - Send OTP
 document.getElementById('sendOtpBtn').addEventListener('click', async () => {
   const phone = document.getElementById('countryCode').value + document.getElementById('phoneNumber').value;
-  if (!phone.slice(1)) {
-    alert('Please enter a valid phone number');
+  
+  if (!document.getElementById('phoneNumber').value) {
+    showError('Please enter a phone number');
     return;
   }
   
   try {
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('sendOtpBtn', {
-      size: 'invisible'
-    });
+    document.getElementById('sendOtpBtn').disabled = true;
+    document.getElementById('sendOtpBtn').textContent = 'Sending...';
     
-    const confirmationResult = await auth.signInWithPhoneNumber(phone, window.recaptchaVerifier);
-    window.confirmationResult = confirmationResult;
+    // Initialize fresh recaptcha
+    initRecaptcha();
     
+    confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
+    
+    document.getElementById('phoneSection').style.display = 'none';
     document.getElementById('otpSection').style.display = 'block';
-    alert('OTP sent to your phone');
+    showSuccess('OTP sent to your phone');
+    document.getElementById('sendOtpBtn').textContent = 'Send OTP';
+    document.getElementById('sendOtpBtn').disabled = false;
+    
   } catch (error) {
-    console.log('Error: ' + error.message);
-    alert('Error sending OTP. Please check your phone number.');
+    console.error('Error sending OTP:', error.message);
+    showError('Error: ' + (error.message || 'Could not send OTP. Try again.'));
+    document.getElementById('sendOtpBtn').disabled = false;
+    document.getElementById('sendOtpBtn').textContent = 'Send OTP';
+    recaptchaVerifier = null;
   }
 });
 
+// Resend OTP
+document.getElementById('resendOtpBtn').addEventListener('click', async () => {
+  const phone = document.getElementById('countryCode').value + document.getElementById('phoneNumber').value;
+  
+  try {
+    document.getElementById('resendOtpBtn').disabled = true;
+    document.getElementById('resendOtpBtn').textContent = 'Resending...';
+    
+    // Clear old verifier and create new one
+    recaptchaVerifier = null;
+    initRecaptcha();
+    
+    confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
+    showSuccess('OTP resent to your phone');
+    
+    document.getElementById('resendOtpBtn').textContent = 'Resend OTP';
+    document.getElementById('resendOtpBtn').disabled = false;
+  } catch (error) {
+    console.error('Error resending OTP:', error.message);
+    showError('Error resending OTP: ' + error.message);
+    document.getElementById('resendOtpBtn').disabled = false;
+    document.getElementById('resendOtpBtn').textContent = 'Resend OTP';
+  }
+});
+
+// Verify OTP
 document.getElementById('verifyOtpBtn').addEventListener('click', async () => {
   const otp = document.getElementById('otpInput').value;
+  
   if (!otp || otp.length !== 6) {
-    alert('Please enter a valid 6-digit OTP');
+    document.getElementById('otpInput').classList.add('error');
+    showError('Please enter a valid 6-digit OTP');
+    return;
+  }
+  
+  if (!confirmationResult) {
+    showError('OTP session expired. Please request a new OTP.');
+    resetLoginForm();
     return;
   }
   
   try {
-    await window.confirmationResult.confirm(otp);
-    currentUser = auth.currentUser;
-    showDashboard();
+    document.getElementById('verifyOtpBtn').disabled = true;
+    document.getElementById('verifyOtpBtn').textContent = 'Verifying...';
+    
+    const result = await confirmationResult.confirm(otp);
+    currentUser = result.user;
+    
+    document.getElementById('verifyOtpBtn').textContent = 'Verify & Login';
+    showSuccess('Login successful!');
+    
+    setTimeout(() => {
+      showDashboard();
+    }, 1000);
+    
   } catch (error) {
-    alert('Invalid OTP. Please try again.');
+    console.error('Error verifying OTP:', error.message);
+    document.getElementById('verifyOtpBtn').disabled = false;
+    document.getElementById('verifyOtpBtn').textContent = 'Verify & Login';
+    document.getElementById('otpInput').classList.add('error');
+    showError('Invalid OTP. Please try again.');
+    document.getElementById('otpInput').value = '';
   }
+});
+
+// Clear error when user types
+document.getElementById('otpInput').addEventListener('input', () => {
+  document.getElementById('otpInput').classList.remove('error');
 });
 
 function showDashboard() {
@@ -1046,9 +1217,12 @@ function logout() {
   auth.signOut().then(() => {
     document.getElementById('loginPage').style.display = 'flex';
     document.getElementById('dashboardPage').classList.remove('active');
-    document.getElementById('phoneNumber').value = '';
-    document.getElementById('otpInput').value = '';
-    document.getElementById('otpSection').style.display = 'none';
+    resetLoginForm();
+    recaptchaVerifier = null;
+    confirmationResult = null;
+  }).catch(error => {
+    console.error('Logout error:', error);
+    showError('Error during logout');
   });
 }
 
