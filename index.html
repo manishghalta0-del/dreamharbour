@@ -1,189 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dream Harbour - Expense Tracker</title>
-
-  <!-- Firebase SDKs -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dream Harbour - Full Enterprise</title>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .container {
-      background: white;
-      border-radius: 20px;
-      max-width: 420px;
-      width: 90%;
-      padding: 40px 30px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-      text-align: center;
-    }
-
-    h1 {
-      color: #333;
-      font-size: 32px;
-      margin-bottom: 8px;
-      font-weight: 700;
-    }
-
-    .subtitle {
-      color: #666;
-      font-size: 15px;
-      margin-bottom: 30px;
-    }
-
-    input {
-      width: 100%;
-      padding: 14px 16px;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
-      font-size: 16px;
-      margin-bottom: 16px;
-      transition: border-color 0.3s;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-
-    button {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    #otpSection {
-      display: none;
-      margin-top: 20px;
-    }
-
-    #recaptcha-container {
-      display: flex;
-      justify-content: center;
-      margin: 16px 0;
-    }
-
-    .success {
-      color: #10b981;
-      font-size: 14px;
-      margin-top: 12px;
-      font-weight: 500;
-    }
-
-    .error {
-      color: #ef4444;
-      font-size: 14px;
-      margin-top: 12px;
-      font-weight: 500;
-    }
-
-    #dashboardSection {
-      display: none;
-    }
-
-    .dashboard-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-
-    #logoutBtn {
-      background: #ef4444;
-      margin-top: 20px;
-    }
-
-    #logoutBtn:hover {
-      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
-    }
-
-    .hidden {
-      display: none;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+    .header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; text-align: center; }
+    .header h1 { font-size: 32px; margin-bottom: 4px; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .login-box { background: white; border-radius: 12px; padding: 40px; max-width: 450px; margin: 60px auto; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    input, select, textarea { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; margin: 12px 0; font-size: 16px; font-family: inherit; }
+    input:focus, select:focus { outline: none; border-color: #667eea; }
+    button { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin: 12px 0; }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+    .error { color: #ef4444; margin: 10px 0; font-size: 14px; }
+    .success { color: #10b981; margin: 10px 0; font-size: 14px; }
+    .hidden { display: none !important; }
+    .dashboard { display: none; }
+    .dashboard.active { display: block; }
+    .card { background: white; padding: 20px; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .card h3 { color: #667eea; font-size: 14px; margin-bottom: 10px; }
+    .card .amount { font-size: 28px; font-weight: bold; color: #333; }
+    .top-bar { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 16px; }
+    .badge { display: inline-block; padding: 4px 12px; background: #667eea; color: white; border-radius: 20px; font-size: 12px; }
+    .logout-btn { background: #ef4444; width: auto; padding: 10px 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; overflow-x: auto; padding-bottom: 12px; }
+    .tab-btn { padding: 10px 20px; background: none; border: none; color: #666; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+    .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .table-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding: 15px; border-bottom: 1px solid #e5e7eb; }
+    .table-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding: 15px; background: #f9fafb; font-weight: 600; color: #666; font-size: 12px; }
+    .small-btn { width: auto; padding: 8px 16px; font-size: 13px; }
+    .chart-container { background: white; border-radius: 8px; padding: 20px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
   </style>
 </head>
 <body>
-  <!-- LOGIN SCREEN -->
-  <div class="container" id="loginContainer">
-    <h1>Dream Harbour</h1>
-    <p class="subtitle">Smart Money Management for Modern Business</p>
+  <div class="header">
+    <h1>💼 Dream Harbour - Full Enterprise</h1>
+    <p>Complete Business Accounting Suite</p>
+  </div>
 
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="login-box">
+    <h2>Welcome</h2>
     <div id="loginSection">
-      <input 
-        type="tel" 
-        id="phoneNumber" 
-        placeholder="+919999999999" 
-        autocomplete="tel"
-      />
+      <input type="tel" id="phoneNumber" placeholder="+919999999999">
       <div id="recaptcha-container"></div>
       <button onclick="sendOTP()">Send OTP</button>
       <div id="sendError" class="error"></div>
-      <div id="sendSuccess" class="success"></div>
     </div>
-
-    <div id="otpSection">
-      <input 
-        type="text" 
-        id="otpCode" 
-        placeholder="Enter 6-digit OTP" 
-        maxlength="6"
-        autocomplete="one-time-code"
-      />
-      <button onclick="verifyOTP()">Verify & Login</button>
+    <div id="otpSection" class="hidden">
+      <input type="text" id="otpCode" placeholder="Enter 6-digit OTP" maxlength="6">
+      <button onclick="verifyOTP()">Verify Login</button>
       <div id="verifyError" class="error"></div>
     </div>
   </div>
 
-  <!-- DASHBOARD SCREEN -->
-  <div class="container" id="dashboardSection">
-    <div class="dashboard-header">
-      <h1>Welcome! 🎉</h1>
-      <p id="userPhone" style="opacity: 0.9; margin-top: 8px;"></p>
+  <!-- DASHBOARD -->
+  <div id="dashboardScreen" class="dashboard">
+    <div class="container">
+      <div class="top-bar">
+        <div>
+          <p><strong id="userPhone"></strong></p>
+          <span class="badge">OWNER</span>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+
+      <div class="grid">
+        <div class="card"><h3>💰 Total Income</h3><div class="amount" id="totalIncome">₹0</div></div>
+        <div class="card"><h3>💸 Total Expense</h3><div class="amount" id="totalExpense">₹0</div></div>
+        <div class="card"><h3>📊 Balance</h3><div class="amount" id="netBalance">₹0</div></div>
+        <div class="card"><h3>👥 Clients</h3><div class="amount" id="totalClients">0</div></div>
+        <div class="card"><h3>📄 Invoices</h3><div class="amount" id="totalInvoices">0</div></div>
+        <div class="card"><h3>⏳ Pending</h3><div class="amount" id="pendingAmount">₹0</div></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('transactions')">📝 Transactions</button>
+        <button class="tab-btn" onclick="switchTab('invoices')">📄 Invoices</button>
+        <button class="tab-btn" onclick="switchTab('clients')">👥 Clients</button>
+        <button class="tab-btn" onclick="switchTab('reports')">📋 Reports</button>
+      </div>
+
+      <!-- Dashboard Tab -->
+      <div id="dashboard" class="tab-content active">
+        <div class="chart-container"><h3>Income vs Expense</h3><canvas id="chartOverview"></canvas></div>
+        <div class="chart-container"><h3>Monthly Trend</h3><canvas id="chartTrend"></canvas></div>
+      </div>
+
+      <!-- Transactions Tab -->
+      <div id="transactions" class="tab-content">
+        <div class="card">
+          <h3>Add Transaction</h3>
+          <select id="txType"><option value="income">Income</option><option value="expense">Expense</option></select>
+          <input type="number" id="txAmount" placeholder="Amount">
+          <input type="text" id="txCategory" placeholder="Category">
+          <input type="text" id="txDesc" placeholder="Description">
+          <button onclick="addTransaction()">Add</button>
+          <div id="txMsg"></div>
+        </div>
+        <div class="card">
+          <h3>All Transactions</h3>
+          <div class="table-header"><div>Category</div><div>Amount</div><div>Type</div><div>Date</div><div>Action</div></div>
+          <div id="txList"></div>
+        </div>
+      </div>
+
+      <!-- Invoices Tab -->
+      <div id="invoices" class="tab-content">
+        <div class="card">
+          <h3>Create Invoice</h3>
+          <select id="invoiceClient"><option value="">Select Client</option></select>
+          <input type="number" id="invoiceAmount" placeholder="Amount">
+          <input type="text" id="invoiceDesc" placeholder="Description">
+          <select id="invoiceStatus"><option value="pending">Pending</option><option value="paid">Paid</option></select>
+          <button onclick="createInvoice()">Create</button>
+          <div id="invMsg"></div>
+        </div>
+        <div class="card">
+          <h3>Invoices</h3>
+          <div class="table-header"><div>Invoice #</div><div>Client</div><div>Amount</div><div>Status</div><div>Date</div><div>Action</div></div>
+          <div id="invList"></div>
+        </div>
+      </div>
+
+      <!-- Clients Tab -->
+      <div id="clients" class="tab-content">
+        <div class="card">
+          <h3>Add Client</h3>
+          <input type="text" id="clientName" placeholder="Client Name">
+          <input type="email" id="clientEmail" placeholder="Email">
+          <input type="tel" id="clientPhone" placeholder="Phone">
+          <input type="text" id="clientAddress" placeholder="Address">
+          <button onclick="addClient()">Add</button>
+          <div id="clientMsg"></div>
+        </div>
+        <div class="card">
+          <h3>All Clients</h3>
+          <div class="table-header"><div>Name</div><div>Email</div><div>Phone</div><div>Address</div><div>Action</div></div>
+          <div id="clientList"></div>
+        </div>
+      </div>
+
+      <!-- Reports Tab -->
+      <div id="reports" class="tab-content">
+        <div class="card">
+          <h3>Generate Report</h3>
+          <input type="date" id="reportStart">
+          <input type="date" id="reportEnd">
+          <select id="reportType"><option value="summary">Summary</option><option value="detailed">Detailed</option><option value="pl">P&L</option></select>
+          <button onclick="generateReport()">Generate</button>
+          <button onclick="exportCSV()" class="small-btn">📊 Export CSV</button>
+          <div id="reportMsg"></div>
+        </div>
+        <div class="card" id="reportContent"></div>
+      </div>
     </div>
-    
-    <p style="color: #666; margin: 20px 0;">You're successfully logged in to Dream Harbour!</p>
-    <p style="color: #999; font-size: 14px;">Dashboard features coming in next steps...</p>
-    
-    <button id="logoutBtn" onclick="logout()">Logout</button>
   </div>
 
   <script>
-    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyC-tQWS8o_Y7ZJtI3JjW9Uk4I9aHJ1ZDxs",
       authDomain: "dream-harbour.firebaseapp.com",
@@ -193,115 +179,304 @@
       appId: "1:857245144265:web:6855412224da516592e918"
     };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-    // Set persistence so user stays logged in
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .then(() => console.log("✅ User will stay logged in"))
-      .catch((error) => console.error("Persistence error:", error));
+    let confirmationResult, currentUser = null;
+    let transactions = [], clients = [], invoices = [];
+    let chartOverview, chartTrend;
 
-    let confirmationResult;
-
-    // Send OTP Function
     function sendOTP() {
-      const phoneNumber = document.getElementById('phoneNumber').value.trim();
-      const sendError = document.getElementById('sendError');
-      const sendSuccess = document.getElementById('sendSuccess');
-      
-      sendError.textContent = '';
-      sendSuccess.textContent = '';
-
-      if (!phoneNumber) {
-        sendError.textContent = "Please enter a phone number";
-        return;
-      }
-
-      console.log("📱 Sending OTP to:", phoneNumber);
-
-      const appVerifier = new firebase.auth.RecaptchaVerifier(
-        'recaptcha-container', 
-        { size: 'invisible' }
-      );
-
-      auth.signInWithPhoneNumber(phoneNumber, appVerifier)
-        .then((result) => {
-          confirmationResult = result;
-          sendSuccess.textContent = "✅ OTP sent successfully!";
-          document.getElementById('otpSection').style.display = 'block';
-          console.log("✅ OTP sent to", phoneNumber);
+      const phone = document.getElementById('phoneNumber').value;
+      if (!phone) { alert('Enter phone'); return; }
+      const appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+      auth.signInWithPhoneNumber(phone, appVerifier)
+        .then(r => {
+          confirmationResult = r;
+          document.getElementById('loginSection').classList.add('hidden');
+          document.getElementById('otpSection').classList.remove('hidden');
         })
-        .catch((error) => {
-          console.error("❌ OTP send error:", error);
-          sendError.textContent = error.message;
-        });
+        .catch(e => alert('Error: ' + e.message));
     }
 
-    // Verify OTP Function
     function verifyOTP() {
-      const otp = document.getElementById('otpCode').value.trim();
-      const verifyError = document.getElementById('verifyError');
-
-      verifyError.textContent = '';
-
-      if (!otp || otp.length !== 6) {
-        verifyError.textContent = "Please enter a valid 6-digit OTP";
-        return;
-      }
-
-      console.log("🔐 Verifying OTP:", otp);
-
+      const otp = document.getElementById('otpCode').value;
+      if (otp.length !== 6) { alert('Enter 6-digit OTP'); return; }
       confirmationResult.confirm(otp)
-        .then((result) => {
-          const user = result.user;
-          console.log("✅ Login successful!", user.phoneNumber);
-          // Dashboard will show automatically via onAuthStateChanged
-        })
-        .catch((error) => {
-          console.error("❌ OTP verification failed:", error);
-          verifyError.textContent = "Invalid OTP. Please try again.";
-        });
+        .then(r => { currentUser = r.user; showDashboard(); })
+        .catch(e => alert('Invalid OTP'));
     }
 
-    // Auth State Listener - Keeps user logged in
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        console.log("🟢 User is logged in:", user.phoneNumber);
-        showDashboard(user);
-      } else {
-        console.log("🔴 No user logged in");
-        showLogin();
-      }
+    auth.onAuthStateChanged(user => {
+      if (user && currentUser) showDashboard();
+      else showLogin();
     });
 
-    // Show Dashboard
-    function showDashboard(user) {
-      document.getElementById('loginContainer').style.display = 'none';
-      document.getElementById('dashboardSection').style.display = 'block';
-      document.getElementById('userPhone').textContent = user.phoneNumber;
+    function showDashboard() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('dashboardScreen').classList.add('active');
+      document.getElementById('userPhone').textContent = currentUser.phoneNumber;
+      loadAllData();
     }
 
-    // Show Login Screen
     function showLogin() {
-      document.getElementById('dashboardSection').style.display = 'none';
-      document.getElementById('loginContainer').style.display = 'block';
+      document.getElementById('dashboardScreen').classList.remove('active');
+      document.getElementById('loginScreen').classList.remove('hidden');
     }
 
-    // Logout Function
-    function logout() {
-      auth.signOut()
-        .then(() => {
-          console.log("✅ Logged out successfully");
-          alert("You've been logged out");
-        })
-        .catch((error) => {
-          console.error("❌ Logout error:", error);
+    async function loadAllData() {
+      await loadTransactions();
+      await loadClients();
+      await loadInvoices();
+      updateCards();
+      displayTransactions();
+      displayClients();
+      displayInvoices();
+      updateCharts();
+    }
+
+    async function loadTransactions() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid).collection('transactions').orderBy('date', 'desc').get();
+        transactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) { transactions = []; }
+    }
+
+    async function loadClients() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid).collection('clients').get();
+        clients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        populateClientSelect();
+      } catch (e) { clients = []; }
+    }
+
+    async function loadInvoices() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid).collection('invoices').orderBy('date', 'desc').get();
+        invoices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) { invoices = []; }
+    }
+
+    function updateCards() {
+      let income = 0, expense = 0, pending = 0;
+      transactions.forEach(t => {
+        if (t.type === 'income') income += t.amount;
+        else expense += t.amount;
+      });
+      invoices.forEach(inv => {
+        if (inv.status === 'pending') pending += inv.amount;
+      });
+      document.getElementById('totalIncome').textContent = '₹' + income;
+      document.getElementById('totalExpense').textContent = '₹' + expense;
+      document.getElementById('netBalance').textContent = '₹' + (income - expense);
+      document.getElementById('totalClients').textContent = clients.length;
+      document.getElementById('totalInvoices').textContent = invoices.length;
+      document.getElementById('pendingAmount').textContent = '₹' + pending;
+    }
+
+    function updateCharts() {
+      let income = 0, expense = 0;
+      transactions.forEach(t => {
+        if (t.type === 'income') income += t.amount;
+        else expense += t.amount;
+      });
+
+      if (chartOverview) chartOverview.destroy();
+      const ctx1 = document.getElementById('chartOverview');
+      chartOverview = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: ['Income', 'Expense'],
+          datasets: [{ data: [income, expense], backgroundColor: ['#10b981', '#ef4444'], borderRadius: 6 }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      const monthlyData = {};
+      transactions.forEach(t => {
+        const date = t.date.toDate ? t.date.toDate() : new Date(t.date);
+        const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (!monthlyData[monthYear]) monthlyData[monthYear] = { income: 0, expense: 0 };
+        if (t.type === 'income') monthlyData[monthYear].income += t.amount;
+        else monthlyData[monthYear].expense += t.amount;
+      });
+
+      const monthLabels = Object.keys(monthlyData);
+      if (chartTrend) chartTrend.destroy();
+      const ctx2 = document.getElementById('chartTrend');
+      chartTrend = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: monthLabels,
+          datasets: [
+            { label: 'Income', data: monthLabels.map(m => monthlyData[m].income), borderColor: '#10b981', tension: 0.4, borderWidth: 2 },
+            { label: 'Expense', data: monthLabels.map(m => monthlyData[m].expense), borderColor: '#ef4444', tension: 0.4, borderWidth: 2 }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+    async function addTransaction() {
+      const type = document.getElementById('txType').value;
+      const amount = parseFloat(document.getElementById('txAmount').value);
+      const category = document.getElementById('txCategory').value;
+      const desc = document.getElementById('txDesc').value;
+      if (!amount || !category) { alert('Fill all fields'); return; }
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('transactions').add({
+          type, amount, category, description: desc, date: new Date()
         });
+        document.getElementById('txAmount').value = '';
+        document.getElementById('txCategory').value = '';
+        document.getElementById('txDesc').value = '';
+        loadAllData();
+      } catch (e) { alert('Error: ' + e.message); }
     }
 
-    console.log("✅ Firebase initialized - Dream Harbour ready!");
+    function displayTransactions() {
+      let html = '';
+      transactions.forEach(t => {
+        const date = t.date.toDate ? t.date.toDate().toLocaleDateString() : new Date(t.date).toLocaleDateString();
+        html += `<div class="table-row"><div>${t.category}</div><div>₹${t.amount}</div><div>${t.type}</div><div>${date}</div><div><button class="small-btn" onclick="deleteTransaction('${t.id}')">Delete</button></div></div>`;
+      });
+      document.getElementById('txList').innerHTML = html || '<div class="table-row">No transactions</div>';
+    }
+
+    async function deleteTransaction(id) {
+      if (!confirm('Delete?')) return;
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).delete();
+        loadAllData();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    async function addClient() {
+      const name = document.getElementById('clientName').value;
+      const email = document.getElementById('clientEmail').value;
+      const phone = document.getElementById('clientPhone').value;
+      const address = document.getElementById('clientAddress').value;
+      if (!name) { alert('Enter name'); return; }
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('clients').add({
+          name, email, phone, address, createdAt: new Date()
+        });
+        document.getElementById('clientName').value = '';
+        document.getElementById('clientEmail').value = '';
+        document.getElementById('clientPhone').value = '';
+        document.getElementById('clientAddress').value = '';
+        loadAllData();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    function displayClients() {
+      let html = '';
+      clients.forEach(c => {
+        html += `<div class="table-row"><div>${c.name}</div><div>${c.email || '-'}</div><div>${c.phone || '-'}</div><div>${c.address || '-'}</div><div><button class="small-btn" onclick="deleteClient('${c.id}')">Delete</button></div></div>`;
+      });
+      document.getElementById('clientList').innerHTML = html || '<div class="table-row">No clients</div>';
+    }
+
+    async function deleteClient(id) {
+      if (!confirm('Delete?')) return;
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('clients').doc(id).delete();
+        loadAllData();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    function populateClientSelect() {
+      const sel = document.getElementById('invoiceClient');
+      sel.innerHTML = '<option value="">Select Client</option>';
+      clients.forEach(c => {
+        sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+      });
+    }
+
+    async function createInvoice() {
+      const clientId = document.getElementById('invoiceClient').value;
+      const amount = parseFloat(document.getElementById('invoiceAmount').value);
+      const desc = document.getElementById('invoiceDesc').value;
+      const status = document.getElementById('invoiceStatus').value;
+      if (!clientId || !amount) { alert('Fill all fields'); return; }
+      try {
+        const client = clients.find(c => c.id === clientId);
+        await db.collection('users').doc(currentUser.uid).collection('invoices').add({
+          invoiceNumber: 'INV-' + Date.now(),
+          clientId, clientName: client.name,
+          amount, description: desc, status,
+          date: new Date()
+        });
+        document.getElementById('invoiceAmount').value = '';
+        document.getElementById('invoiceDesc').value = '';
+        loadAllData();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    function displayInvoices() {
+      let html = '';
+      invoices.forEach(inv => {
+        const date = inv.date.toDate ? inv.date.toDate().toLocaleDateString() : new Date(inv.date).toLocaleDateString();
+        const statusColor = inv.status === 'paid' ? '#10b981' : '#f59e0b';
+        html += `<div class="table-row"><div>${inv.invoiceNumber}</div><div>${inv.clientName}</div><div>₹${inv.amount}</div><div style="color:${statusColor}">${inv.status}</div><div>${date}</div><div><button class="small-btn" onclick="downloadPDF('${inv.id}')">PDF</button></div></div>`;
+      });
+      document.getElementById('invList').innerHTML = html || '<div class="table-row">No invoices</div>';
+    }
+
+    async function downloadPDF(id) {
+      const inv = invoices.find(i => i.id === id);
+      if (!inv) return;
+      const html = `<div style="padding:40px"><h2>${inv.invoiceNumber}</h2><p>Bill To: ${inv.clientName}</p><table style="width:100%;border-collapse:collapse;margin:20px 0"><tr><td style="border:1px solid #ddd;padding:10px">Description</td><td style="border:1px solid #ddd;padding:10px">₹${inv.amount}</td></tr></table><p style="font-weight:bold">Total: ₹${inv.amount}</p><p>Status: ${inv.status}</p></div>`;
+      const opt = { margin: 10, filename: inv.invoiceNumber + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { format: 'a4' } };
+      html2pdf().set(opt).from(html).save();
+    }
+
+    async function generateReport() {
+      const start = new Date(document.getElementById('reportStart').value);
+      const end = new Date(document.getElementById('reportEnd').value);
+      const type = document.getElementById('reportType').value;
+      if (!start || !end) { alert('Select dates'); return; }
+      let income = 0, expense = 0;
+      const filtered = transactions.filter(t => {
+        const d = t.date.toDate ? t.date.toDate() : new Date(t.date);
+        return d >= start && d <= end;
+      });
+      filtered.forEach(t => {
+        if (t.type === 'income') income += t.amount;
+        else expense += t.amount;
+      });
+      let html = `<h3>Report: ${start.toLocaleDateString()} to ${end.toLocaleDateString()}</h3><p>Income: ₹${income}</p><p>Expense: ₹${expense}</p><p>Profit: ₹${income - expense}</p>`;
+      if (type === 'pl') html += `<p>Margin: ${income > 0 ? ((income - expense) / income * 100).toFixed(2) : 0}%</p>`;
+      document.getElementById('reportContent').innerHTML = html;
+    }
+
+    function exportCSV() {
+      let csv = 'Category,Amount,Type,Date\n';
+      transactions.forEach(t => {
+        const date = t.date.toDate ? t.date.toDate().toLocaleDateString() : new Date(t.date).toLocaleDateString();
+        csv += `"${t.category}","${t.amount}","${t.type}","${date}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'DreamHarbour_' + new Date().toLocaleDateString() + '.csv';
+      a.click();
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(name).classList.add('active');
+      event.target.classList.add('active');
+      if (name === 'dashboard') updateCharts();
+    }
+
+    function logout() {
+      auth.signOut();
+    }
   </script>
 </body>
 </html>
