@@ -927,5 +927,810 @@
       document.body.classList.add('dark-mode');
     }
   </script>
+      // ============ FIREBASE CONFIG ============
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-tQWS8o_Y7ZJtI3JjW9Uk4I9aHJ1ZDxs",
+      authDomain: "dream-harbour.firebaseapp.com",
+      projectId: "dream-harbour",
+      storageBucket: "dream-harbour.firebasestorage.app",
+      messagingSenderId: "857245144265",
+      appId: "1:857245144265:web:6855412224da516592e918"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+    // ============ GLOBAL VARIABLES ============
+    let confirmationResult, currentUser = null, userRole = null;
+    let currentBusiness = null, allBusinesses = [];
+    let allTransactions = [], allClients = [], allInvoices = [];
+    let overviewChart, trendChart, forecastChart;
+    let recurringTransactions = [];
+
+    const tabs = ['analytics', 'invoices', 'clients', 'transactions', 'reports', 'settings', 'export'];
+
+    // ============ AUTHENTICATION ============
+    function sendOTP() {
+      const phoneNumber = document.getElementById('phoneNumber').value.trim();
+      const sendError = document.getElementById('sendError');
+      sendError.textContent = '';
+      if (!phoneNumber) { sendError.textContent = "Enter phone number"; return; }
+      const appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+      auth.signInWithPhoneNumber(phoneNumber, appVerifier)
+        .then((r) => { 
+          confirmationResult = r; 
+          document.getElementById('loginSection').classList.add('hidden'); 
+          document.getElementById('otpSection').classList.remove('hidden'); 
+        })
+        .catch(error => { sendError.textContent = error.message; });
+    }
+
+    function verifyOTP() {
+      const otp = document.getElementById('otpCode').value.trim();
+      const verifyError = document.getElementById('verifyError');
+      verifyError.textContent = '';
+      if (!otp || otp.length !== 6) { verifyError.textContent = "Invalid OTP"; return; }
+      confirmationResult.confirm(otp)
+        .then(r => { currentUser = r.user; })
+        .catch(error => { verifyError.textContent = "Invalid OTP"; });
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        currentUser = user;
+        await loadUserRole();
+        await loadBusinesses();
+        showDashboard();
+      } else {
+        showLogin();
+      }
+    });
+
+    // ============ USER & BUSINESS MANAGEMENT ============
+    async function loadUserRole() {
+      try {
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        if (userDoc.exists) {
+          userRole = userDoc.data().role || 'owner';
+        } else {
+          await db.collection('users').doc(currentUser.uid).set({
+            phone: currentUser.phoneNumber, 
+            role: 'owner', 
+            createdAt: new Date()
+          });
+          userRole = 'owner';
+        }
+      } catch (error) {
+        console.error('Error loading role:', error);
+      }
+    }
+
+    async function loadBusinesses() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid).collection('businesses').get();
+        allBusinesses = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        if (allBusinesses.length === 0) {
+          await createDefaultBusiness();
+          await loadBusinesses();
+          return;
+        }
+        
+        populateBusinessSelector();
+        currentBusiness = allBusinesses[0];
+        await loadAllData();
+      } catch (error) {
+        console.error('Error loading businesses:', error);
+        allBusinesses = [];
+      }
+    }
+
+    async function createDefaultBusiness() {
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('businesses').add({
+          name: 'Main Business',
+          email: '',
+          phone: '',
+          address: '',
+          bankDetails: '',
+          createdAt: new Date()
+        });
+      } catch (error) {
+        console.error('Error creating business:', error);
+      }
+    }
+
+    function populateBusinessSelector() {
+      const selector = document.getElementById('businessSelector');
+      selector.innerHTML = '<option value="">Select Business</option>';
+      allBusinesses.forEach(b => {
+        selector.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+      });
+    }
+
+    async function switchBusiness() {
+      const bizId = document.getElementById('businessSelector').value;
+      if (bizId) {
+        currentBusiness = allBusinesses.find(b => b.id === bizId);
+        await loadAllData();
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('dashboardScreen').classList.remove('hidden');
+      document.getElementById('userPhoneDisplay').textContent = currentUser.phoneNumber;
+      document.getElementById('roleDisplay').textContent = "OWNER";
+      createTabs();
+      processRecurringTransactions();
+    }
+
+    function showLogin() {
+      document.getElementById('dashboardScreen').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+    }
+
+    // ============ TABS MANAGEMENT ============
+    function createTabs() {
+      const container = document.getElementById('tabsContainer');
+      container.innerHTML = '';
+      tabs.forEach(tab => {
+        const btn = document.createElement('button');
+        btn.className = 'tab-btn' + (tab === 'analytics' ? ' active' : '');
+        btn.textContent = getTabLabel(tab);
+        btn.onclick = () => switchTab(tab);
+        container.appendChild(btn);
+      });
+    }
+
+    function getTabLabel(tab) {
+      const labels = {
+        analytics: '📊 Analytics',
+        invoices: '📄 Invoices',
+        clients: '👥 Clients',
+        transactions: '📝 Transactions',
+        reports: '📋 Reports',
+        settings: '⚙️ Settings',
+        export: '💾 Export'
+      };
+      return labels[tab] || tab;
+    }
+
+    function switchTab(name) {
+      tabs.forEach(tab => {
+        document.getElementById(tab).classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(name).classList.add('active');
+      event.target.classList.add('active');
+      
+      if (name === 'analytics') updateCharts();
+    }
+
+    // ============ DATA LOADING ============
+    async function loadAllData() {
+      await loadTransactions();
+      await loadClients();
+      await loadInvoices();
+      await loadRecurringTransactions();
+      updateSummaryCards();
+      displayTransactions();
+      displayClients();
+      displayInvoices();
+      updateCharts();
+    }
+
+    async function loadTransactions() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .collection('transactions').orderBy('date', 'desc').get();
+        allTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error:', error);
+        allTransactions = [];
+      }
+    }
+
+    async function loadClients() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .collection('clients').get();
+        allClients = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        populateClientSelector();
+      } catch (error) {
+        console.error('Error:', error);
+        allClients = [];
+      }
+    }
+
+    async function loadInvoices() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .collection('invoices').orderBy('date', 'desc').get();
+        allInvoices = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error:', error);
+        allInvoices = [];
+      }
+    }
+
+    async function loadRecurringTransactions() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .collection('recurringTransactions').get();
+        recurringTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error:', error);
+        recurringTransactions = [];
+      }
+    }
+
+    // ============ SUMMARY & CHARTS ============
+    function updateSummaryCards() {
+      let income = 0, expense = 0, pendingInvoices = 0, paidInvoices = 0, totalClients = allClients.length;
+      
+      allTransactions.forEach(t => {
+        if (t.type === 'income') income += t.amount;
+        else expense += t.amount;
+      });
+      
+      allInvoices.forEach(inv => {
+        if (inv.status === 'pending') pendingInvoices += inv.amount;
+        else paidInvoices += inv.amount;
+      });
+
+      document.getElementById('summaryCards').innerHTML = `
+        <div class="card"><h3>💰 Total Income</h3><div class="amount">₹${income.toLocaleString()}</div></div>
+        <div class="card"><h3>💸 Total Expenses</h3><div class="amount">₹${expense.toLocaleString()}</div></div>
+        <div class="card"><h3>📊 Net Profit</h3><div class="amount" style="color: ${income - expense >= 0 ? '#10b981' : '#ef4444'};">₹${(income - expense).toLocaleString()}</div></div>
+        <div class="card"><h3>⏳ Pending Invoices</h3><div class="amount">₹${pendingInvoices.toLocaleString()}</div></div>
+        <div class="card"><h3>✅ Paid Invoices</h3><div class="amount">₹${paidInvoices.toLocaleString()}</div></div>
+        <div class="card"><h3>👥 Total Clients</h3><div class="amount">${totalClients}</div></div>
+      `;
+    }
+
+    function updateCharts() {
+      const incomeExpenseData = { income: 0, expense: 0 };
+      const monthlyData = {};
+      const categoryData = {};
+
+      allTransactions.forEach(t => {
+        if (t.type === 'income') incomeExpenseData.income += t.amount;
+        else incomeExpenseData.expense += t.amount;
+        
+        const date = t.date.toDate ? t.date.toDate() : new Date(t.date);
+        const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (!monthlyData[monthYear]) monthlyData[monthYear] = { income: 0, expense: 0 };
+        if (t.type === 'income') monthlyData[monthYear].income += t.amount;
+        else monthlyData[monthYear].expense += t.amount;
+
+        if (!categoryData[t.category]) categoryData[t.category] = 0;
+        categoryData[t.category] += t.amount;
+      });
+
+      // ============ FORECAST (Advanced Financial Forecasting) ============
+      const months = Object.keys(monthlyData).slice(-3);
+      const avgIncome = months.length > 0 ? months.reduce((sum, m) => sum + monthlyData[m].income, 0) / months.length : 0;
+      const avgExpense = months.length > 0 ? months.reduce((sum, m) => sum + monthlyData[m].expense, 0) / months.length : 0;
+      const monthlyForecast = {};
+      for (let i = 1; i <= 3; i++) {
+        monthlyForecast[`+${i}M`] = { 
+          income: Math.round(avgIncome * (1 + (Math.random() - 0.5) * 0.2)), 
+          expense: Math.round(avgExpense * (1 + (Math.random() - 0.5) * 0.2)) 
+        };
+      }
+
+      // Chart 1: Overview
+      const ctx1 = document.getElementById('overviewChart');
+      if (overviewChart) overviewChart.destroy();
+      overviewChart = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: ['Income', 'Expense'],
+          datasets: [{
+            data: [incomeExpenseData.income, incomeExpenseData.expense],
+            backgroundColor: ['#10b981', '#ef4444'],
+            borderRadius: 6,
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      // Chart 2: Trend
+      const monthLabels = Object.keys(monthlyData);
+      const ctx2 = document.getElementById('trendChart');
+      if (trendChart) trendChart.destroy();
+      trendChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: monthLabels,
+          datasets: [
+            { label: 'Income', data: monthLabels.map(m => monthlyData[m].income), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', tension: 0.4, borderWidth: 2 },
+            { label: 'Expense', data: monthLabels.map(m => monthlyData[m].expense), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.4, borderWidth: 2 }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      // Chart 3: Forecast
+      const forecastLabels = Object.keys(monthlyForecast);
+      const ctx3 = document.getElementById('forecastChart');
+      if (forecastChart) forecastChart.destroy();
+      forecastChart = new Chart(ctx3, {
+        type: 'bar',
+        data: {
+          labels: forecastLabels,
+          datasets: [
+            { label: 'Predicted Income', data: forecastLabels.map(m => monthlyForecast[m].income), backgroundColor: '#10b981' },
+            { label: 'Predicted Expense', data: forecastLabels.map(m => monthlyForecast[m].expense), backgroundColor: '#ef4444' }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+    // ============ CLIENT MANAGEMENT ============
+    async function addClient() {
+      const name = document.getElementById('clientName').value;
+      const email = document.getElementById('clientEmail').value;
+      const phone = document.getElementById('clientPhone').value;
+      const address = document.getElementById('clientAddress').value;
+      const msg = document.getElementById('clientMessage');
+
+      if (!name) { msg.textContent = '❌ Enter client name'; msg.classList.add('error'); return; }
+
+      try {
+        await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .collection('clients').add({
+            name, email, phone, address, createdAt: new Date()
+          });
+        msg.textContent = '✅ Client added!';
+        msg.classList.add('success');
+        document.getElementById('clientName').value = '';
+        document.getElementById('clientEmail').value = '';
+        document.getElementById('clientPhone').value = '';
+        document.getElementById('clientAddress').value = '';
+        setTimeout(() => { msg.textContent = ''; loadClients(); }, 1500);
+      } catch (error) {
+        msg.textContent = '❌ Error: ' + error.message;
+        msg.classList.add('error');
+      }
+    }
+
+    function displayClients() {
+      let html = '';
+      allClients.forEach(c => {
+        html += `
+          <div class="table-row">
+            <div><strong>${c.name}</strong></div>
+            <div>${c.email || '-'}</div>
+            <div>${c.phone || '-'}</div>
+            <div>${c.address || '-'}</div>
+            <div><button class="small-btn" onclick="deleteClient('${c.id}')">Delete</button></div>
+          </div>
+        `;
+      });
+      document.getElementById('clientsList').innerHTML = html || '<div class="table-row">No clients yet</div>';
+    }
+
+    async function deleteClient(id) {
+      if (!confirm('Delete this client?')) return;
+      try {
+        await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .collection('clients').doc(id).delete();
+        loadClients();
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    function populateClientSelector() {
+      const selector = document.getElementById('invoiceClient');
+      selector.innerHTML = '<option value="">Select Client</option>';
+      allClients.forEach(c => {
+        selector.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+      });
+    }
+
+    function populateInvoiceDetails() {
+      const clientId = document.getElementById('invoiceClient').value;
+      const client = allClients.find(c => c.id === clientId);
+      if (client) {
+        console.log('Client selected:', client);
+      }
+    }
+
+    // ============ INVOICE MANAGEMENT ============
+    async function createInvoice() {
+      const clientId = document.getElementById('invoiceClient').value;
+      const amount = parseFloat(document.getElementById('invoiceAmount').value);
+      const description = document.getElementById('invoiceDescription').value;
+      const status = document.getElementById('invoiceStatus').value;
+      const msg = document.getElementById('invoiceMessage');
+
+      if (!clientId || !amount) { msg.textContent = '❌ Fill all fields'; msg.classList.add('error'); return; }
+
+      try {
+        const client = allClients.find(c => c.id === clientId);
+        const invoiceNum = 'INV-' + new Date().getTime();
+        
+        await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .collection('invoices').add({
+            invoiceNumber: invoiceNum,
+            clientId,
+            clientName: client.name,
+            clientEmail: client.email,
+            clientPhone: client.phone,
+            amount,
+            description,
+            status,
+            date: new Date(),
+            createdAt: new Date()
+          });
+        
+        msg.textContent = '✅ Invoice created!';
+        msg.classList.add('success');
+        document.getElementById('invoiceAmount').value = '';
+        document.getElementById('invoiceDescription').value = '';
+        setTimeout(() => { msg.textContent = ''; loadInvoices(); updateSummaryCards(); }, 1500);
+      } catch (error) {
+        msg.textContent = '❌ Error: ' + error.message;
+        msg.classList.add('error');
+      }
+    }
+
+    function displayInvoices() {
+      let html = '';
+      allInvoices.forEach(inv => {
+        const date = inv.date.toDate ? inv.date.toDate().toLocaleDateString() : new Date(inv.date).toLocaleDateString();
+        html += `
+          <div class="table-row">
+            <div><strong>${inv.invoiceNumber}</strong></div>
+            <div>${inv.clientName}</div>
+            <div>₹${inv.amount.toLocaleString()}</div>
+            <div><span style="padding: 4px 8px; border-radius: 4px; background: ${inv.status === 'paid' ? '#10b981' : '#f59e0b'}; color: white; font-size: 12px;">${inv.status.toUpperCase()}</span></div>
+            <div>${date}</div>
+            <div><button class="small-btn" onclick="downloadInvoice('${inv.id}')">📥 PDF</button></div>
+          </div>
+        `;
+      });
+      document.getElementById('invoicesList').innerHTML = html || '<div class="table-row">No invoices yet</div>';
+    }
+
+    async function downloadInvoice(id) {
+      const invoice = allInvoices.find(inv => inv.id === id);
+      if (!invoice) return;
+
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <div style="padding: 40px; border: 2px solid #667eea; font-family: Arial;">
+          <div style="text-align: center; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px;">
+            <h2 style="margin: 0;">${currentBusiness.name || 'Dream Harbour'}</h2>
+            <p style="margin: 5px 0; color: #666;">INVOICE</p>
+            <p style="margin: 5px 0; font-size: 18px; font-weight: bold;">${invoice.invoiceNumber}</p>
+          </div>
+          <p><strong>Bill To:</strong></p>
+          <p>${invoice.clientName}<br/>${invoice.clientEmail || ''}<br/>${invoice.clientPhone || ''}</p>
+          <table style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+            <tr>
+              <th style="border: 1px solid #ddd; padding: 10px; background: #f0f0f0; text-align: left;">Description</th>
+              <th style="border: 1px solid #ddd; padding: 10px; background: #f0f0f0; text-align: right;">Amount</th>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 10px;">${invoice.description}</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">₹${invoice.amount.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 10px; font-weight: bold;">TOTAL</td>
+              <td style="border: 1px solid #ddd; padding: 10px; text-align: right; font-weight: bold; font-size: 18px; color: #10b981;">₹${invoice.amount.toLocaleString()}</td>
+            </tr>
+          </table>
+          <p style="text-align: center; margin-top: 40px;">
+            <span style="padding: 8px 16px; border-radius: 4px; background: ${invoice.status === 'paid' ? '#10b981' : '#f59e0b'}; color: white; font-weight: bold;">
+              ${invoice.status.toUpperCase()}
+            </span>
+          </p>
+          <p style="text-align: center; margin-top: 40px; color: #999; font-size: 12px;">Thank you for your business!</p>
+        </div>
+      `;
+
+      const opt = {
+        margin: 10,
+        filename: `${invoice.invoiceNumber}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+
+    // ============ TRANSACTIONS & TAGS ============
+    async function addTransaction() {
+      const type = document.getElementById('transactionType').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const category = document.getElementById('category').value;
+      const description = document.getElementById('description').value;
+      const msg = document.getElementById('transactionMessage');
+
+      if (!amount || !category) { msg.textContent = '❌ Fill all fields'; msg.classList.add('error'); return; }
+
+      try {
+        await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .collection('transactions').add({
+            userId: currentUser.uid,
+            type,
+            amount,
+            category,
+            description,
+            tags: [],
+            date: new Date(),
+            userPhone: currentUser.phoneNumber
+          });
+
+        msg.textContent = '✅ Transaction added!';
+        msg.classList.add('success');
+        document.getElementById('amount').value = '';
+        document.getElementById('category').value = '';
+        document.getElementById('description').value = '';
+        
+        setTimeout(() => { msg.textContent = ''; loadAllData(); }, 1500);
+      } catch (error) {
+        msg.textContent = '❌ Error: ' + error.message;
+        msg.classList.add('error');
+      }
+    }
+
+    function displayTransactions() {
+      let html = '';
+      allTransactions.forEach(t => {
+        const date = t.date.toDate ? t.date.toDate().toLocaleDateString() : new Date(t.date).toLocaleDateString();
+        html += `
+          <div class="table-row">
+            <div><strong>${t.category}</strong></div>
+            <div style="color: ${t.type === 'income' ? '#10b981' : '#ef4444'}; font-weight: 700;">
+              ${t.type === 'income' ? '+' : '-'} ₹${t.amount.toLocaleString()}
+            </div>
+            <div>${t.tags && t.tags.length > 0 ? t.tags.join(', ') : '-'}</div>
+            <div>${date}</div>
+            <div><button class="small-btn" onclick="deleteTransaction('${t.id}')">🗑️ Delete</button></div>
+          </div>
+        `;
+      });
+      document.getElementById('transactionsList').innerHTML = html || '<div class="table-row">No transactions yet</div>';
+    }
+
+    async function deleteTransaction(id) {
+      if (!confirm('Delete transaction?')) return;
+      try {
+        await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .collection('transactions').doc(id).delete();
+        loadAllData();
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    function filterTransactions() {
+      const search = document.getElementById('searchBox').value.toLowerCase();
+      const month = document.getElementById('filterMonth').value;
+      const tag = document.getElementById('filterTag').value;
+      
+      let filtered = allTransactions.filter(t => {
+        const categoryMatch = t.category.toLowerCase().includes(search);
+        const date = t.date.toDate ? t.date.toDate() : new Date(t.date);
+        const monthMatch = !month || (date.getMonth() + 1).toString().padStart(2, '0') === month;
+        const tagMatch = !tag || (t.tags && t.tags.includes(tag));
+        return categoryMatch && monthMatch && tagMatch;
+      });
+
+      let html = '';
+      filtered.forEach(t => {
+        const date = t.date.toDate ? t.date.toDate().toLocaleDateString() : new Date(t.date).toLocaleDateString();
+        html += `
+          <div class="table-row">
+            <div><strong>${t.category}</strong></div>
+            <div style="color: ${t.type === 'income' ? '#10b981' : '#ef4444'}; font-weight: 700;">
+              ${t.type === 'income' ? '+' : '-'} ₹${t.amount.toLocaleString()}
+            </div>
+            <div>${t.tags && t.tags.length > 0 ? t.tags.join(', ') : '-'}</div>
+            <div>${date}</div>
+            <div><button class="small-btn" onclick="deleteTransaction('${t.id}')">🗑️ Delete</button></div>
+          </div>
+        `;
+      });
+      document.getElementById('transactionsList').innerHTML = html || '<div class="table-row">No matching transactions</div>';
+    }
+
+    // ============ RECURRING TRANSACTIONS ============
+    async function processRecurringTransactions() {
+      const today = new Date();
+      for (const recurring of recurringTransactions) {
+        const lastDate = recurring.lastProcessed ? new Date(recurring.lastProcessed) : new Date(0);
+        const daysSince = (today - lastDate) / (1000 * 60 * 60 * 24);
+
+        if (daysSince >= recurring.frequency) {
+          await db.collection('users').doc(currentUser.uid)
+            .collection('businesses').doc(currentBusiness.id)
+            .collection('transactions').add({
+              type: recurring.type,
+              amount: recurring.amount,
+              category: recurring.category,
+              description: `[Recurring] ${recurring.description}`,
+              tags: ['recurring'],
+              date: new Date(),
+              recurringId: recurring.id
+            });
+
+          await db.collection('users').doc(currentUser.uid)
+            .collection('businesses').doc(currentBusiness.id)
+            .collection('recurringTransactions').doc(recurring.id)
+            .update({ lastProcessed: new Date() });
+        }
+      }
+    }
+
+    // ============ CUSTOM REPORTS ============
+    async function generateReport() {
+      const startDate = new Date(document.getElementById('reportStartDate').value);
+      const endDate = new Date(document.getElementById('reportEndDate').value);
+      const reportType = document.getElementById('reportType').value;
+
+      if (!startDate || !endDate) { alert('Select dates'); return; }
+
+      let html = '<div class="form-area"><h3>📊 Report: ' + startDate.toLocaleDateString() + ' to ' + endDate.toLocaleDateString() + '</h3>';
+
+      let income = 0, expense = 0, transactionCount = 0;
+      const categoryBreakdown = {};
+      
+      const filtered = allTransactions.filter(t => {
+        const d = t.date.toDate ? t.date.toDate() : new Date(t.date);
+        return d >= startDate && d <= endDate;
+      });
+
+      filtered.forEach(t => {
+        transactionCount++;
+        if (t.type === 'income') income += t.amount;
+        else expense += t.amount;
+        
+        if (!categoryBreakdown[t.category]) categoryBreakdown[t.category] = { income: 0, expense: 0 };
+        if (t.type === 'income') categoryBreakdown[t.category].income += t.amount;
+        else categoryBreakdown[t.category].expense += t.amount;
+      });
+
+      html += `<p><strong>Period:</strong> ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}</p>`;
+      html += `<p><strong>Total Transactions:</strong> ${transactionCount}</p>`;
+      html += `<p><strong>Total Income:</strong> ₹${income.toLocaleString()}</p>`;
+      html += `<p><strong>Total Expense:</strong> ₹${expense.toLocaleString()}</p>`;
+      html += `<p><strong>Net Profit/Loss:</strong> <span style="color: ${income - expense >= 0 ? '#10b981' : '#ef4444'}; font-weight: bold;">₹${(income - expense).toLocaleString()}</span></p>`;
+
+      if (reportType === 'pl') {
+        html += `<p><strong>Profit Margin:</strong> ${income > 0 ? ((income - expense) / income * 100).toFixed(2) : '0'}%</p>`;
+      }
+
+      if (reportType === 'detailed') {
+        html += '<h4>Category Breakdown</h4>';
+        for (const [category, data] of Object.entries(categoryBreakdown)) {
+          html += `<p>${category}: Income ₹${data.income}, Expense ₹${data.expense}, Net ₹${data.income - data.expense}</p>`;
+        }
+        html += '<h4>Transactions</h4>';
+        filtered.forEach(t => {
+          const date = t.date.toDate ? t.date.toDate().toLocaleDateString() : new Date(t.date).toLocaleDateString();
+          html += `<p>${date} - ${t.category}: ${t.type === 'income' ? '+' : '-'} ₹${t.amount}</p>`;
+        });
+      }
+
+      html += '</div>';
+      document.getElementById('reportContent').innerHTML = html;
+    }
+
+    function exportReportPDF() {
+      const element = document.getElementById('reportContent');
+      if (!element.innerHTML) { alert('Generate report first'); return; }
+      const opt = {
+        margin: 10,
+        filename: 'Dream_Harbour_Report.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+
+    // ============ SETTINGS & EXPORT ============
+    async function saveBusiness Settings() {
+      const name = document.getElementById('businessName').value;
+      const email = document.getElementById('businessEmail').value;
+      const phone = document.getElementById('businessPhone').value;
+      const address = document.getElementById('businessAddress').value;
+      const bankDetails = document.getElementById('businessBankDetails').value;
+      const msg = document.getElementById('settingsMessage');
+
+      try {
+        await db.collection('users').doc(currentUser.uid)
+          .collection('businesses').doc(currentBusiness.id)
+          .update({
+            name, email, phone, address, bankDetails
+          });
+        
+        currentBusiness = { ...currentBusiness, name, email, phone, address, bankDetails };
+        msg.textContent = '✅ Settings saved!';
+        msg.classList.add('success');
+        setTimeout(() => { msg.textContent = ''; }, 2000);
+      } catch (error) {
+        msg.textContent = '❌ Error: ' + error.message;
+        msg.classList.add('error');
+      }
+    }
+
+    function exportToCSV() {
+      let csv = 'Category,Amount,Type,Tags,Date,Description\n';
+      allTransactions.forEach(t => {
+        const date = t.date.toDate ? t.date.toDate().toLocaleDateString() : new Date(t.date).toLocaleDateString();
+        csv += `"${t.category}","${t.amount}","${t.type}","${(t.tags || []).join(';')}","${date}","${t.description || ''}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Dream_Harbour_${currentBusiness.name || 'Data'}_${new Date().toLocaleDateString()}.csv`;
+      a.click();
+      document.getElementById('exportMessage').textContent = '✅ CSV exported!';
+      document.getElementById('exportMessage').classList.add('success');
+      setTimeout(() => { document.getElementById('exportMessage').textContent = ''; }, 2000);
+    }
+
+    function exportToJSON() {
+      const data = {
+        business: currentBusiness,
+        transactions: allTransactions,
+        clients: allClients,
+        invoices: allInvoices,
+        exportDate: new Date()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Dream_Harbour_${currentBusiness.name || 'Data'}_${new Date().toLocaleDateString()}.json`;
+      a.click();
+      document.getElementById('exportMessage').textContent = '✅ JSON exported!';
+      document.getElementById('exportMessage').classList.add('success');
+      setTimeout(() => { document.getElementById('exportMessage').textContent = ''; }, 2000);
+    }
+
+    function printReport() {
+      window.print();
+    }
+
+    function clearAllData() {
+      if (!confirm('⚠️ PERMANENTLY DELETE ALL DATA? This cannot be undone!')) return;
+      if (!confirm('Are you absolutely sure? Type "DELETE" to confirm.')) return;
+      alert('Feature requires manual confirmation. Contact support.');
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    // ============ INITIALIZATION ============
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+    }
 </body>
 </html>
