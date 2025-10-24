@@ -1034,6 +1034,7 @@ let servicesData = [];
 let customersData = [];
 let invoicesData = [];
 let confirmationResult = null;
+let recaptchaVerifier = null;
 
 const SERVICESDATABASE = {
   'Photocopy': { sac: '998341', gst: 5 },
@@ -1065,6 +1066,17 @@ function showSuccess(message) {
   }, 3000);
 }
 
+// Initialize RecaptchaVerifier
+function initRecaptcha() {
+  if (recaptchaVerifier) {
+    recaptchaVerifier.clear();
+  }
+  recaptchaVerifier = new firebase.auth.RecaptchaVerifier('sendOtpBtn', {
+    size: 'invisible',
+    callback: () => console.log('reCAPTCHA verified')
+  });
+}
+
 // Clear login form
 function resetLoginForm() {
   document.getElementById('phoneNumber').value = '';
@@ -1076,6 +1088,7 @@ function resetLoginForm() {
   document.getElementById('successMessage').classList.remove('show');
   document.getElementById('otpInput').classList.remove('error');
   confirmationResult = null;
+  recaptchaVerifier = null;
 }
 
 // Authentication - Send OTP
@@ -1091,8 +1104,10 @@ document.getElementById('sendOtpBtn').addEventListener('click', async () => {
     document.getElementById('sendOtpBtn').disabled = true;
     document.getElementById('sendOtpBtn').textContent = 'Sending...';
     
-    // Use phone sign-in directly without RecaptchaVerifier (more stable)
-    confirmationResult = await auth.signInWithPhoneNumber(phone, window.recaptchaVerifier);
+    // Initialize RecaptchaVerifier
+    initRecaptcha();
+    
+    confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
     
     document.getElementById('phoneSection').style.display = 'none';
     document.getElementById('otpSection').style.display = 'block';
@@ -1105,6 +1120,7 @@ document.getElementById('sendOtpBtn').addEventListener('click', async () => {
     showError('Error: ' + (error.message || 'Could not send OTP. Try again.'));
     document.getElementById('sendOtpBtn').disabled = false;
     document.getElementById('sendOtpBtn').textContent = 'Send OTP';
+    recaptchaVerifier = null;
   }
 });
 
@@ -1116,7 +1132,10 @@ document.getElementById('resendOtpBtn').addEventListener('click', async () => {
     document.getElementById('resendOtpBtn').disabled = true;
     document.getElementById('resendOtpBtn').textContent = 'Resending...';
     
-    confirmationResult = await auth.signInWithPhoneNumber(phone, window.recaptchaVerifier);
+    recaptchaVerifier = null;
+    initRecaptcha();
+    
+    confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
     showSuccess('OTP resent to your phone');
     
     document.getElementById('resendOtpBtn').textContent = 'Resend OTP';
@@ -1126,6 +1145,7 @@ document.getElementById('resendOtpBtn').addEventListener('click', async () => {
     showError('Error resending OTP: ' + error.message);
     document.getElementById('resendOtpBtn').disabled = false;
     document.getElementById('resendOtpBtn').textContent = 'Resend OTP';
+    recaptchaVerifier = null;
   }
 });
 
@@ -1185,7 +1205,6 @@ function logout() {
     document.getElementById('loginPage').style.display = 'flex';
     document.getElementById('dashboardPage').classList.remove('active');
     resetLoginForm();
-    confirmationResult = null;
   }).catch(error => {
     console.error('Logout error:', error);
     showError('Error during logout');
