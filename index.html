@@ -293,7 +293,7 @@
           <input type="tel" id="businessPhone" placeholder="Business Phone" />
           <input type="text" id="businessAddress" placeholder="Business Address" />
           <textarea id="businessBankDetails" placeholder="Bank Details (for invoices)" style="height: 100px;"></textarea>
-          <button onclick="saveBusiness Settings()" style="margin-top: 16px;">Save Settings</button>
+          <button onclick="saveBusinessSettings()" style="margin-top: 16px;">Save Settings</button>
           <div id="settingsMessage"></div>
         </div>
       </div>
@@ -860,7 +860,7 @@
       html2pdf().set(opt).from(element).save();
     }
 
-    async function saveBusiness Settings() {
+    async function saveBusinessSettings() {
       const name = document.getElementById('businessName').value;
       const email = document.getElementById('businessEmail').value;
       const phone = document.getElementById('businessPhone').value;
@@ -1648,7 +1648,7 @@
     }
 
     // ============ SETTINGS & EXPORT ============
-    async function saveBusiness Settings() {
+    async function saveBusinessSettings() {
       const name = document.getElementById('businessName').value;
       const email = document.getElementById('businessEmail').value;
       const phone = document.getElementById('businessPhone').value;
