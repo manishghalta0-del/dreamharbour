@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dream Harbour - Full Enterprise</title>
+  <title>Multi-Service Business Suite - CSC, E-Stamping, Document Writing</title>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -14,7 +14,8 @@
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
     .header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; text-align: center; }
     .header h1 { font-size: 32px; margin-bottom: 4px; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
     .login-box { background: white; border-radius: 12px; padding: 40px; max-width: 450px; margin: 60px auto; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     input, select, textarea { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; margin: 12px 0; font-size: 16px; font-family: inherit; }
     input:focus, select:focus { outline: none; border-color: #667eea; }
@@ -26,10 +27,10 @@
     .dashboard { display: none; }
     .dashboard.active { display: block; }
     .card { background: white; padding: 20px; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .card h3 { color: #667eea; font-size: 14px; margin-bottom: 10px; }
+    .card h3 { color: #667eea; font-size: 14px; margin-bottom: 10px; font-weight: 600; }
     .card .amount { font-size: 28px; font-weight: bold; color: #333; }
     .top-bar { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 16px; }
-    .badge { display: inline-block; padding: 4px 12px; background: #667eea; color: white; border-radius: 20px; font-size: 12px; }
+    .badge { display: inline-block; padding: 8px 16px; background: #667eea; color: white; border-radius: 20px; font-size: 12px; font-weight: 600; }
     .logout-btn { background: #ef4444; width: auto; padding: 10px 20px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px; }
     .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; overflow-x: auto; padding-bottom: 12px; }
@@ -37,16 +38,20 @@
     .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-    .table-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding: 15px; border-bottom: 1px solid #e5e7eb; }
+    .table-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding: 15px; border-bottom: 1px solid #e5e7eb; align-items: center; }
     .table-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding: 15px; background: #f9fafb; font-weight: 600; color: #666; font-size: 12px; }
-    .small-btn { width: auto; padding: 8px 16px; font-size: 13px; }
+    .small-btn { width: auto; padding: 8px 16px; font-size: 13px; margin: 4px; }
     .chart-container { background: white; border-radius: 8px; padding: 20px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .tax-summary { background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; margin: 15px 0; }
+    .tax-summary p { margin: 8px 0; font-size: 14px; }
+    .tax-summary .bold { font-weight: 600; color: #667eea; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>💼 Dream Harbour - Full Enterprise</h1>
-    <p>Complete Business Accounting Suite</p>
+    <h1>🏢 Multi-Service Business Suite</h1>
+    <p>CSC | E-Stamping | Document Writing - Complete Accounting & Invoicing</p>
   </div>
 
   <!-- LOGIN SCREEN -->
@@ -71,100 +76,126 @@
       <div class="top-bar">
         <div>
           <p><strong id="userPhone"></strong></p>
-          <span class="badge">OWNER</span>
+          <span class="badge" id="gstinBadge">GSTIN Setup Required</span>
         </div>
         <button class="logout-btn" onclick="logout()">Logout</button>
       </div>
 
-      <div class="grid">
-        <div class="card"><h3>💰 Total Income</h3><div class="amount" id="totalIncome">₹0</div></div>
-        <div class="card"><h3>💸 Total Expense</h3><div class="amount" id="totalExpense">₹0</div></div>
-        <div class="card"><h3>📊 Balance</h3><div class="amount" id="netBalance">₹0</div></div>
-        <div class="card"><h3>👥 Clients</h3><div class="amount" id="totalClients">0</div></div>
-        <div class="card"><h3>📄 Invoices</h3><div class="amount" id="totalInvoices">0</div></div>
-        <div class="card"><h3>⏳ Pending</h3><div class="amount" id="pendingAmount">₹0</div></div>
+      <!-- Business Settings (Collapsible) -->
+      <div class="card">
+        <h3 onclick="toggleBusinessSettings()">⚙️ Business Settings & GSTIN</h3>
+        <div id="businessSettings" style="display:none; margin-top: 15px;">
+          <input type="text" id="businessName" placeholder="Business Name" value="">
+          <input type="text" id="gstin" placeholder="GSTIN (15 digits)" value="">
+          <input type="email" id="businessEmail" placeholder="Business Email" value="">
+          <input type="tel" id="businessPhone" placeholder="Business Phone" value="">
+          <input type="text" id="businessAddress" placeholder="Business Address" value="">
+          <input type="number" id="gstRate" placeholder="GST Rate (%)" value="18">
+          <button onclick="saveBusinessSettings()" class="small-btn">Save Settings</button>
+          <div id="settingsMsg"></div>
+        </div>
       </div>
 
+      <!-- Summary Cards -->
+      <div class="grid">
+        <div class="card"><h3>💰 Total Revenue</h3><div class="amount" id="totalRevenue">₹0</div></div>
+        <div class="card"><h3>🏦 Total GST Collected</h3><div class="amount" id="totalGST">₹0</div></div>
+        <div class="card"><h3>📊 Net Income</h3><div class="amount" id="netIncome">₹0</div></div>
+        <div class="card"><h3>👥 Customers</h3><div class="amount" id="totalCustomers">0</div></div>
+      </div>
+
+      <!-- Main Tabs -->
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-        <button class="tab-btn" onclick="switchTab('transactions')">📝 Transactions</button>
+        <button class="tab-btn" onclick="switchTab('services')">🛠️ Services</button>
         <button class="tab-btn" onclick="switchTab('invoices')">📄 Invoices</button>
-        <button class="tab-btn" onclick="switchTab('clients')">👥 Clients</button>
-        <button class="tab-btn" onclick="switchTab('reports')">📋 Reports</button>
+        <button class="tab-btn" onclick="switchTab('customers')">👥 Customers</button>
+        <button class="tab-btn" onclick="switchTab('reports')">📋 Reports & Tax</button>
       </div>
 
       <!-- Dashboard Tab -->
       <div id="dashboard" class="tab-content active">
-        <div class="chart-container"><h3>Income vs Expense</h3><canvas id="chartOverview"></canvas></div>
-        <div class="chart-container"><h3>Monthly Trend</h3><canvas id="chartTrend"></canvas></div>
+        <div class="chart-container"><h3>Revenue by Service Type</h3><canvas id="chartServices"></canvas></div>
+        <div class="chart-container"><h3>Monthly Revenue Trend</h3><canvas id="chartMonthly"></canvas></div>
       </div>
 
-      <!-- Transactions Tab -->
-      <div id="transactions" class="tab-content">
+      <!-- Services Tab -->
+      <div id="services" class="tab-content">
         <div class="card">
-          <h3>Add Transaction</h3>
-          <select id="txType"><option value="income">Income</option><option value="expense">Expense</option></select>
-          <input type="number" id="txAmount" placeholder="Amount">
-          <input type="text" id="txCategory" placeholder="Category">
-          <input type="text" id="txDesc" placeholder="Description">
-          <button onclick="addTransaction()">Add</button>
-          <div id="txMsg"></div>
+          <h3>Add Service Entry</h3>
+          <select id="serviceType">
+            <option value="">Select Service</option>
+            <option value="csc">CSC Service</option>
+            <option value="estamping">E-Stamping</option>
+            <option value="document">Document Writing (Tehsil)</option>
+          </select>
+          <input type="text" id="sacCode" placeholder="SAC Code (e.g., 998312)">
+          <input type="text" id="serviceDesc" placeholder="Service Description">
+          <input type="number" id="serviceAmount" placeholder="Amount (Before GST)">
+          <select id="customerSelect"><option value="">Select/Add Customer</option></select>
+          <button onclick="addService()" class="small-btn">Add Service</button>
+          <div id="serviceMsg"></div>
         </div>
+
         <div class="card">
-          <h3>All Transactions</h3>
-          <div class="table-header"><div>Category</div><div>Amount</div><div>Type</div><div>Date</div><div>Action</div></div>
-          <div id="txList"></div>
+          <h3>Services List</h3>
+          <div class="table-header"><div>Date</div><div>Type</div><div>Description</div><div>Amount</div><div>GST</div><div>Total</div><div>Action</div></div>
+          <div id="servicesList"></div>
         </div>
       </div>
 
       <!-- Invoices Tab -->
       <div id="invoices" class="tab-content">
         <div class="card">
-          <h3>Create Invoice</h3>
-          <select id="invoiceClient"><option value="">Select Client</option></select>
-          <input type="number" id="invoiceAmount" placeholder="Amount">
-          <input type="text" id="invoiceDesc" placeholder="Description">
-          <select id="invoiceStatus"><option value="pending">Pending</option><option value="paid">Paid</option></select>
-          <button onclick="createInvoice()">Create</button>
-          <div id="invMsg"></div>
+          <h3>Generate Invoice</h3>
+          <select id="invoiceServices" multiple size="5">
+            <option value="">Select services to invoice...</option>
+          </select>
+          <input type="date" id="invoiceDate">
+          <button onclick="generateInvoice()" class="small-btn">Generate GST Invoice</button>
+          <div id="invoiceMsg"></div>
         </div>
+
         <div class="card">
-          <h3>Invoices</h3>
-          <div class="table-header"><div>Invoice #</div><div>Client</div><div>Amount</div><div>Status</div><div>Date</div><div>Action</div></div>
-          <div id="invList"></div>
+          <h3>All Invoices</h3>
+          <div class="table-header"><div>Invoice #</div><div>Customer</div><div>Amount</div><div>GST</div><div>Total</div><div>Date</div><div>Action</div></div>
+          <div id="invoicesList"></div>
         </div>
       </div>
 
-      <!-- Clients Tab -->
-      <div id="clients" class="tab-content">
+      <!-- Customers Tab -->
+      <div id="customers" class="tab-content">
         <div class="card">
-          <h3>Add Client</h3>
-          <input type="text" id="clientName" placeholder="Client Name">
-          <input type="email" id="clientEmail" placeholder="Email">
-          <input type="tel" id="clientPhone" placeholder="Phone">
-          <input type="text" id="clientAddress" placeholder="Address">
-          <button onclick="addClient()">Add</button>
-          <div id="clientMsg"></div>
+          <h3>Add Customer</h3>
+          <input type="text" id="custName" placeholder="Customer Name">
+          <input type="email" id="custEmail" placeholder="Email">
+          <input type="tel" id="custPhone" placeholder="Phone">
+          <input type="text" id="custAddress" placeholder="Address">
+          <input type="text" id="custGSTIN" placeholder="Customer GSTIN (Optional)">
+          <button onclick="addCustomer()" class="small-btn">Add Customer</button>
+          <div id="custMsg"></div>
         </div>
+
         <div class="card">
-          <h3>All Clients</h3>
-          <div class="table-header"><div>Name</div><div>Email</div><div>Phone</div><div>Address</div><div>Action</div></div>
-          <div id="clientList"></div>
+          <h3>Customers</h3>
+          <div class="table-header"><div>Name</div><div>Email</div><div>Phone</div><div>GSTIN</div><div>Action</div></div>
+          <div id="customersList"></div>
         </div>
       </div>
 
-      <!-- Reports Tab -->
+      <!-- Reports & Tax Tab -->
       <div id="reports" class="tab-content">
         <div class="card">
-          <h3>Generate Report</h3>
+          <h3>GST Report Generator</h3>
           <input type="date" id="reportStart">
           <input type="date" id="reportEnd">
-          <select id="reportType"><option value="summary">Summary</option><option value="detailed">Detailed</option><option value="pl">P&L</option></select>
-          <button onclick="generateReport()">Generate</button>
-          <button onclick="exportCSV()" class="small-btn">📊 Export CSV</button>
+          <button onclick="generateGSTReport()" class="small-btn">Generate GST Report</button>
+          <button onclick="generateITCReport()" class="small-btn">Generate ITC Report</button>
+          <button onclick="exportTaxCSV()" class="small-btn">📊 Export Tax Data CSV</button>
           <div id="reportMsg"></div>
         </div>
-        <div class="card" id="reportContent"></div>
+
+        <div class="card" id="taxReportContent"></div>
       </div>
     </div>
   </div>
@@ -185,8 +216,21 @@
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     let confirmationResult, currentUser = null;
-    let transactions = [], clients = [], invoices = [];
-    let chartOverview, chartTrend;
+    let services = [], customers = [], invoices = [];
+    let businessSettings = {};
+    let chartServices, chartMonthly;
+
+    const SAC_CODES = {
+      'csc': '998312',
+      'estamping': '998361',
+      'document': '998399'
+    };
+
+    const SERVICE_NAMES = {
+      'csc': 'CSC Service',
+      'estamping': 'E-Stamping',
+      'document': 'Document Writing'
+    };
 
     function sendOTP() {
       const phone = document.getElementById('phoneNumber').value;
@@ -227,29 +271,75 @@
     }
 
     async function loadAllData() {
-      await loadTransactions();
-      await loadClients();
+      await loadBusinessSettings();
+      await loadServices();
+      await loadCustomers();
       await loadInvoices();
       updateCards();
-      displayTransactions();
-      displayClients();
+      displayServices();
+      displayCustomers();
       displayInvoices();
       updateCharts();
     }
 
-    async function loadTransactions() {
+    async function loadBusinessSettings() {
       try {
-        const snap = await db.collection('users').doc(currentUser.uid).collection('transactions').orderBy('date', 'desc').get();
-        transactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      } catch (e) { transactions = []; }
+        const doc = await db.collection('users').doc(currentUser.uid).collection('settings').doc('business').get();
+        if (doc.exists) {
+          businessSettings = doc.data();
+          document.getElementById('businessName').value = businessSettings.name || '';
+          document.getElementById('gstin').value = businessSettings.gstin || '';
+          document.getElementById('businessEmail').value = businessSettings.email || '';
+          document.getElementById('businessPhone').value = businessSettings.phone || '';
+          document.getElementById('businessAddress').value = businessSettings.address || '';
+          document.getElementById('gstRate').value = businessSettings.gstRate || '18';
+          if (businessSettings.gstin) {
+            document.getElementById('gstinBadge').textContent = 'GSTIN: ' + businessSettings.gstin;
+            document.getElementById('gstinBadge').style.background = '#10b981';
+          }
+        }
+      } catch (e) { console.error(e); }
     }
 
-    async function loadClients() {
+    async function saveBusinessSettings() {
+      const settings = {
+        name: document.getElementById('businessName').value,
+        gstin: document.getElementById('gstin').value,
+        email: document.getElementById('businessEmail').value,
+        phone: document.getElementById('businessPhone').value,
+        address: document.getElementById('businessAddress').value,
+        gstRate: parseFloat(document.getElementById('gstRate').value) || 18
+      };
       try {
-        const snap = await db.collection('users').doc(currentUser.uid).collection('clients').get();
-        clients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        populateClientSelect();
-      } catch (e) { clients = []; }
+        await db.collection('users').doc(currentUser.uid).collection('settings').doc('business').set(settings);
+        businessSettings = settings;
+        document.getElementById('settingsMsg').textContent = '✅ Settings Saved!';
+        document.getElementById('settingsMsg').className = 'success';
+        setTimeout(() => { document.getElementById('settingsMsg').textContent = ''; loadAllData(); }, 2000);
+      } catch (e) {
+        document.getElementById('settingsMsg').textContent = '❌ Error: ' + e.message;
+        document.getElementById('settingsMsg').className = 'error';
+      }
+    }
+
+    function toggleBusinessSettings() {
+      const elem = document.getElementById('businessSettings');
+      elem.style.display = elem.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function loadServices() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid).collection('services').orderBy('date', 'desc').get();
+        services = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) { services = []; }
+    }
+
+    async function loadCustomers() {
+      try {
+        const snap = await db.collection('users').doc(currentUser.uid).collection('customers').get();
+        customers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        populateCustomerSelect();
+      } catch (e) { customers = []; }
     }
 
     async function loadInvoices() {
@@ -259,210 +349,278 @@
       } catch (e) { invoices = []; }
     }
 
-    function updateCards() {
-      let income = 0, expense = 0, pending = 0;
-      transactions.forEach(t => {
-        if (t.type === 'income') income += t.amount;
-        else expense += t.amount;
-      });
-      invoices.forEach(inv => {
-        if (inv.status === 'pending') pending += inv.amount;
-      });
-      document.getElementById('totalIncome').textContent = '₹' + income;
-      document.getElementById('totalExpense').textContent = '₹' + expense;
-      document.getElementById('netBalance').textContent = '₹' + (income - expense);
-      document.getElementById('totalClients').textContent = clients.length;
-      document.getElementById('totalInvoices').textContent = invoices.length;
-      document.getElementById('pendingAmount').textContent = '₹' + pending;
-    }
-
-    function updateCharts() {
-      let income = 0, expense = 0;
-      transactions.forEach(t => {
-        if (t.type === 'income') income += t.amount;
-        else expense += t.amount;
-      });
-
-      if (chartOverview) chartOverview.destroy();
-      const ctx1 = document.getElementById('chartOverview');
-      chartOverview = new Chart(ctx1, {
-        type: 'doughnut',
-        data: {
-          labels: ['Income', 'Expense'],
-          datasets: [{ data: [income, expense], backgroundColor: ['#10b981', '#ef4444'], borderRadius: 6 }]
-        },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-      });
-
-      const monthlyData = {};
-      transactions.forEach(t => {
-        const date = t.date.toDate ? t.date.toDate() : new Date(t.date);
-        const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (!monthlyData[monthYear]) monthlyData[monthYear] = { income: 0, expense: 0 };
-        if (t.type === 'income') monthlyData[monthYear].income += t.amount;
-        else monthlyData[monthYear].expense += t.amount;
-      });
-
-      const monthLabels = Object.keys(monthlyData);
-      if (chartTrend) chartTrend.destroy();
-      const ctx2 = document.getElementById('chartTrend');
-      chartTrend = new Chart(ctx2, {
-        type: 'line',
-        data: {
-          labels: monthLabels,
-          datasets: [
-            { label: 'Income', data: monthLabels.map(m => monthlyData[m].income), borderColor: '#10b981', tension: 0.4, borderWidth: 2 },
-            { label: 'Expense', data: monthLabels.map(m => monthlyData[m].expense), borderColor: '#ef4444', tension: 0.4, borderWidth: 2 }
-          ]
-        },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-      });
-    }
-
-    async function addTransaction() {
-      const type = document.getElementById('txType').value;
-      const amount = parseFloat(document.getElementById('txAmount').value);
-      const category = document.getElementById('txCategory').value;
-      const desc = document.getElementById('txDesc').value;
-      if (!amount || !category) { alert('Fill all fields'); return; }
+    async function addCustomer() {
+      const name = document.getElementById('custName').value;
+      const email = document.getElementById('custEmail').value;
+      const phone = document.getElementById('custPhone').value;
+      const address = document.getElementById('custAddress').value;
+      const gstin = document.getElementById('custGSTIN').value;
+      if (!name) { alert('Enter customer name'); return; }
       try {
-        await db.collection('users').doc(currentUser.uid).collection('transactions').add({
-          type, amount, category, description: desc, date: new Date()
+        await db.collection('users').doc(currentUser.uid).collection('customers').add({
+          name, email, phone, address, gstin, createdAt: new Date()
         });
-        document.getElementById('txAmount').value = '';
-        document.getElementById('txCategory').value = '';
-        document.getElementById('txDesc').value = '';
+        document.getElementById('custName').value = '';
+        document.getElementById('custEmail').value = '';
+        document.getElementById('custPhone').value = '';
+        document.getElementById('custAddress').value = '';
+        document.getElementById('custGSTIN').value = '';
         loadAllData();
       } catch (e) { alert('Error: ' + e.message); }
     }
 
-    function displayTransactions() {
-      let html = '';
-      transactions.forEach(t => {
-        const date = t.date.toDate ? t.date.toDate().toLocaleDateString() : new Date(t.date).toLocaleDateString();
-        html += `<div class="table-row"><div>${t.category}</div><div>₹${t.amount}</div><div>${t.type}</div><div>${date}</div><div><button class="small-btn" onclick="deleteTransaction('${t.id}')">Delete</button></div></div>`;
-      });
-      document.getElementById('txList').innerHTML = html || '<div class="table-row">No transactions</div>';
-    }
-
-    async function deleteTransaction(id) {
-      if (!confirm('Delete?')) return;
-      try {
-        await db.collection('users').doc(currentUser.uid).collection('transactions').doc(id).delete();
-        loadAllData();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    async function addClient() {
-      const name = document.getElementById('clientName').value;
-      const email = document.getElementById('clientEmail').value;
-      const phone = document.getElementById('clientPhone').value;
-      const address = document.getElementById('clientAddress').value;
-      if (!name) { alert('Enter name'); return; }
-      try {
-        await db.collection('users').doc(currentUser.uid).collection('clients').add({
-          name, email, phone, address, createdAt: new Date()
-        });
-        document.getElementById('clientName').value = '';
-        document.getElementById('clientEmail').value = '';
-        document.getElementById('clientPhone').value = '';
-        document.getElementById('clientAddress').value = '';
-        loadAllData();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    function displayClients() {
-      let html = '';
-      clients.forEach(c => {
-        html += `<div class="table-row"><div>${c.name}</div><div>${c.email || '-'}</div><div>${c.phone || '-'}</div><div>${c.address || '-'}</div><div><button class="small-btn" onclick="deleteClient('${c.id}')">Delete</button></div></div>`;
-      });
-      document.getElementById('clientList').innerHTML = html || '<div class="table-row">No clients</div>';
-    }
-
-    async function deleteClient(id) {
-      if (!confirm('Delete?')) return;
-      try {
-        await db.collection('users').doc(currentUser.uid).collection('clients').doc(id).delete();
-        loadAllData();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    function populateClientSelect() {
-      const sel = document.getElementById('invoiceClient');
-      sel.innerHTML = '<option value="">Select Client</option>';
-      clients.forEach(c => {
+    function populateCustomerSelect() {
+      const sel = document.getElementById('customerSelect');
+      sel.innerHTML = '<option value="">Select Customer</option>';
+      customers.forEach(c => {
         sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
       });
     }
 
-    async function createInvoice() {
-      const clientId = document.getElementById('invoiceClient').value;
-      const amount = parseFloat(document.getElementById('invoiceAmount').value);
-      const desc = document.getElementById('invoiceDesc').value;
-      const status = document.getElementById('invoiceStatus').value;
-      if (!clientId || !amount) { alert('Fill all fields'); return; }
+    function displayCustomers() {
+      let html = '';
+      customers.forEach(c => {
+        html += `<div class="table-row"><div>${c.name}</div><div>${c.email || '-'}</div><div>${c.phone || '-'}</div><div>${c.gstin || '-'}</div><div><button class="small-btn" onclick="deleteCustomer('${c.id}')">Delete</button></div></div>`;
+      });
+      document.getElementById('customersList').innerHTML = html || '<div class="table-row">No customers</div>';
+    }
+
+    async function deleteCustomer(id) {
+      if (!confirm('Delete customer?')) return;
       try {
-        const client = clients.find(c => c.id === clientId);
-        await db.collection('users').doc(currentUser.uid).collection('invoices').add({
-          invoiceNumber: 'INV-' + Date.now(),
-          clientId, clientName: client.name,
-          amount, description: desc, status,
-          date: new Date()
-        });
-        document.getElementById('invoiceAmount').value = '';
-        document.getElementById('invoiceDesc').value = '';
+        await db.collection('users').doc(currentUser.uid).collection('customers').doc(id).delete();
         loadAllData();
       } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    async function addService() {
+      const serviceType = document.getElementById('serviceType').value;
+      const serviceDesc = document.getElementById('serviceDesc').value;
+      const amount = parseFloat(document.getElementById('serviceAmount').value);
+      const customerId = document.getElementById('customerSelect').value;
+      if (!serviceType || !amount || !customerId) { alert('Fill all fields'); return; }
+
+      const gstRate = businessSettings.gstRate || 18;
+      const gstAmount = (amount * gstRate) / 100;
+      const totalAmount = amount + gstAmount;
+
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('services').add({
+          serviceType,
+          description: serviceDesc,
+          sacCode: SAC_CODES[serviceType],
+          amount,
+          gstRate,
+          gstAmount,
+          totalAmount,
+          customerId,
+          date: new Date()
+        });
+        document.getElementById('serviceDesc').value = '';
+        document.getElementById('serviceAmount').value = '';
+        loadAllData();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    function displayServices() {
+      let html = '';
+      services.forEach(s => {
+        const date = s.date.toDate ? s.date.toDate().toLocaleDateString() : new Date(s.date).toLocaleDateString();
+        html += `<div class="table-row"><div>${date}</div><div>${SERVICE_NAMES[s.serviceType]}</div><div>${s.description}</div><div>₹${s.amount}</div><div>₹${s.gstAmount.toFixed(2)}</div><div>₹${s.totalAmount.toFixed(2)}</div><div><button class="small-btn" onclick="deleteService('${s.id}')">Delete</button></div></div>`;
+      });
+      document.getElementById('servicesList').innerHTML = html || '<div class="table-row">No services</div>';
+    }
+
+    async function deleteService(id) {
+      if (!confirm('Delete service?')) return;
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('services').doc(id).delete();
+        loadAllData();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    async function generateInvoice() {
+      const selectedIndices = Array.from(document.getElementById('invoiceServices').selectedOptions).map(opt => opt.value);
+      if (selectedIndices.length === 0) { alert('Select services'); return; }
+
+      const selectedServices = services.filter(s => selectedIndices.includes(s.id));
+      let totalAmount = 0, totalGST = 0;
+      selectedServices.forEach(s => {
+        totalAmount += s.amount;
+        totalGST += s.gstAmount;
+      });
+
+      const invoiceNum = 'INV-' + Date.now();
+      const invoice = {
+        invoiceNumber: invoiceNum,
+        services: selectedServices,
+        subtotal: totalAmount,
+        gst: totalGST,
+        total: totalAmount + totalGST,
+        date: new Date()
+      };
+
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('invoices').add(invoice);
+        downloadGSTInvoice(invoice);
+        loadAllData();
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+
+    function downloadGSTInvoice(invoice) {
+      let html = `<div style="padding: 40px; font-family: Arial;">
+        <h2 style="text-align: center; border-bottom: 2px solid #667eea; padding-bottom: 20px;">GST INVOICE</h2>
+        <p style="text-align: center;"><strong>${businessSettings.name}</strong></p>
+        <p style="text-align: center;">GSTIN: ${businessSettings.gstin}</p>
+        <p style="text-align: center;">${businessSettings.address}</p>
+        <p style="text-align: center; margin-top: 20px;"><strong>Invoice #: ${invoice.invoiceNumber}</strong></p>
+        <p style="text-align: center;">Date: ${new Date(invoice.date).toLocaleDateString()}</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+          <tr style="background: #f0f0f0;">
+            <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Description</th>
+            <th style="border: 1px solid #ddd; padding: 10px;">SAC Code</th>
+            <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">Amount</th>
+            <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">GST ${businessSettings.gstRate}%</th>
+            <th style="border: 1px solid #ddd; padding: 10px; text-align: right;">Total</th>
+          </tr>`;
+      
+      invoice.services.forEach(s => {
+        html += `<tr>
+          <td style="border: 1px solid #ddd; padding: 10px;">${s.description}</td>
+          <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${s.sacCode}</td>
+          <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">₹${s.amount.toFixed(2)}</td>
+          <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">₹${s.gstAmount.toFixed(2)}</td>
+          <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">₹${s.totalAmount.toFixed(2)}</td>
+        </tr>`;
+      });
+
+      html += `</table>
+        <div style="text-align: right; margin-top: 20px;">
+          <p><strong>Subtotal: ₹${invoice.subtotal.toFixed(2)}</strong></p>
+          <p><strong>GST: ₹${invoice.gst.toFixed(2)}</strong></p>
+          <p style="font-size: 18px; color: #667eea;"><strong>TOTAL: ₹${invoice.total.toFixed(2)}</strong></p>
+        </div>
+      </div>`;
+
+      const opt = { margin: 10, filename: invoice.invoiceNumber + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { format: 'a4' } };
+      html2pdf().set(opt).from(html).save();
     }
 
     function displayInvoices() {
       let html = '';
       invoices.forEach(inv => {
         const date = inv.date.toDate ? inv.date.toDate().toLocaleDateString() : new Date(inv.date).toLocaleDateString();
-        const statusColor = inv.status === 'paid' ? '#10b981' : '#f59e0b';
-        html += `<div class="table-row"><div>${inv.invoiceNumber}</div><div>${inv.clientName}</div><div>₹${inv.amount}</div><div style="color:${statusColor}">${inv.status}</div><div>${date}</div><div><button class="small-btn" onclick="downloadPDF('${inv.id}')">PDF</button></div></div>`;
+        html += `<div class="table-row"><div>${inv.invoiceNumber}</div><div>${inv.services.length} items</div><div>₹${inv.subtotal.toFixed(2)}</div><div>₹${inv.gst.toFixed(2)}</div><div>₹${inv.total.toFixed(2)}</div><div>${date}</div><div><button class="small-btn" onclick="redownloadInvoice('${inv.invoiceNumber}')">PDF</button></div></div>`;
       });
-      document.getElementById('invList').innerHTML = html || '<div class="table-row">No invoices</div>';
+      document.getElementById('invoicesList').innerHTML = html || '<div class="table-row">No invoices</div>';
     }
 
-    async function downloadPDF(id) {
-      const inv = invoices.find(i => i.id === id);
-      if (!inv) return;
-      const html = `<div style="padding:40px"><h2>${inv.invoiceNumber}</h2><p>Bill To: ${inv.clientName}</p><table style="width:100%;border-collapse:collapse;margin:20px 0"><tr><td style="border:1px solid #ddd;padding:10px">Description</td><td style="border:1px solid #ddd;padding:10px">₹${inv.amount}</td></tr></table><p style="font-weight:bold">Total: ₹${inv.amount}</p><p>Status: ${inv.status}</p></div>`;
-      const opt = { margin: 10, filename: inv.invoiceNumber + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { format: 'a4' } };
-      html2pdf().set(opt).from(html).save();
+    function redownloadInvoice(invNum) {
+      const inv = invoices.find(i => i.invoiceNumber === invNum);
+      if (inv) downloadGSTInvoice(inv);
     }
 
-    async function generateReport() {
+    function updateCards() {
+      let totalRevenue = 0, totalGST = 0;
+      services.forEach(s => {
+        totalRevenue += s.amount;
+        totalGST += s.gstAmount;
+      });
+      document.getElementById('totalRevenue').textContent = '₹' + totalRevenue.toLocaleString();
+      document.getElementById('totalGST').textContent = '₹' + totalGST.toFixed(2);
+      document.getElementById('netIncome').textContent = '₹' + (totalRevenue).toLocaleString();
+      document.getElementById('totalCustomers').textContent = customers.length;
+    }
+
+    function updateCharts() {
+      const serviceData = { csc: 0, estamping: 0, document: 0 };
+      services.forEach(s => {
+        serviceData[s.serviceType] += s.amount;
+      });
+
+      if (chartServices) chartServices.destroy();
+      const ctx1 = document.getElementById('chartServices');
+      chartServices = new Chart(ctx1, {
+        type: 'pie',
+        data: {
+          labels: ['CSC', 'E-Stamping', 'Document Writing'],
+          datasets: [{ data: [serviceData.csc, serviceData.estamping, serviceData.document], backgroundColor: ['#667eea', '#764ba2', '#f59e0b'], borderRadius: 6 }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      const monthlyData = {};
+      services.forEach(s => {
+        const date = s.date.toDate ? s.date.toDate() : new Date(s.date);
+        const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (!monthlyData[monthYear]) monthlyData[monthYear] = 0;
+        monthlyData[monthYear] += s.amount;
+      });
+
+      const monthLabels = Object.keys(monthlyData);
+      if (chartMonthly) chartMonthly.destroy();
+      const ctx2 = document.getElementById('chartMonthly');
+      chartMonthly = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: monthLabels,
+          datasets: [{ label: 'Revenue', data: monthLabels.map(m => monthlyData[m]), borderColor: '#667eea', tension: 0.4, borderWidth: 2, fill: false }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+    function generateGSTReport() {
       const start = new Date(document.getElementById('reportStart').value);
       const end = new Date(document.getElementById('reportEnd').value);
-      const type = document.getElementById('reportType').value;
       if (!start || !end) { alert('Select dates'); return; }
-      let income = 0, expense = 0;
-      const filtered = transactions.filter(t => {
-        const d = t.date.toDate ? t.date.toDate() : new Date(t.date);
-        return d >= start && d <= end;
+
+      let cscAmount = 0, cscGST = 0, estampAmount = 0, estampGST = 0, docAmount = 0, docGST = 0;
+      services.forEach(s => {
+        const d = s.date.toDate ? s.date.toDate() : new Date(s.date);
+        if (d >= start && d <= end) {
+          if (s.serviceType === 'csc') { cscAmount += s.amount; cscGST += s.gstAmount; }
+          else if (s.serviceType === 'estamping') { estampAmount += s.amount; estampGST += s.gstAmount; }
+          else { docAmount += s.amount; docGST += s.gstAmount; }
+        }
       });
-      filtered.forEach(t => {
-        if (t.type === 'income') income += t.amount;
-        else expense += t.amount;
-      });
-      let html = `<h3>Report: ${start.toLocaleDateString()} to ${end.toLocaleDateString()}</h3><p>Income: ₹${income}</p><p>Expense: ₹${expense}</p><p>Profit: ₹${income - expense}</p>`;
-      if (type === 'pl') html += `<p>Margin: ${income > 0 ? ((income - expense) / income * 100).toFixed(2) : 0}%</p>`;
-      document.getElementById('reportContent').innerHTML = html;
+
+      const totalAmount = cscAmount + estampAmount + docAmount;
+      const totalGST = cscGST + estampGST + docGST;
+
+      let html = `<div class="tax-summary">
+        <h3>GST Report: ${start.toLocaleDateString()} to ${end.toLocaleDateString()}</h3>
+        <p><span class="bold">GSTIN:</span> ${businessSettings.gstin}</p>
+        <p><span class="bold">Business:</span> ${businessSettings.name}</p>
+        <hr style="margin: 15px 0;">
+        <h4>Service-wise Breakdown:</h4>
+        <p>CSC Services: ₹${cscAmount.toFixed(2)} | GST: ₹${cscGST.toFixed(2)} | Total: ₹${(cscAmount + cscGST).toFixed(2)}</p>
+        <p>E-Stamping: ₹${estampAmount.toFixed(2)} | GST: ₹${estampGST.toFixed(2)} | Total: ₹${(estampAmount + estampGST).toFixed(2)}</p>
+        <p>Document Writing: ₹${docAmount.toFixed(2)} | GST: ₹${docGST.toFixed(2)} | Total: ₹${(docAmount + docGST).toFixed(2)}</p>
+        <hr style="margin: 15px 0;">
+        <p><span class="bold" style="font-size: 16px;">Total Revenue: ₹${totalAmount.toFixed(2)}</span></p>
+        <p><span class="bold" style="font-size: 16px;">Total GST Collected: ₹${totalGST.toFixed(2)}</span></p>
+        <p><span class="bold" style="font-size: 16px; color: #10b981;">Grand Total: ₹${(totalAmount + totalGST).toFixed(2)}</span></p>
+      </div>`;
+      document.getElementById('taxReportContent').innerHTML = html;
     }
 
-    function exportCSV() {
-      let csv = 'Category,Amount,Type,Date\n';
-      transactions.forEach(t => {
-        const date = t.date.toDate ? t.date.toDate().toLocaleDateString() : new Date(t.date).toLocaleDateString();
-        csv += `"${t.category}","${t.amount}","${t.type}","${date}"\n`;
+    function generateITCReport() {
+      alert('ITC Report: Track Input Tax Credit - Document all purchases with GST invoices');
+    }
+
+    function exportTaxCSV() {
+      let csv = 'Service Type,SAC Code,Date,Amount,GST Rate,GST Amount,Total Amount\n';
+      services.forEach(s => {
+        const date = s.date.toDate ? s.date.toDate().toLocaleDateString() : new Date(s.date).toLocaleDateString();
+        csv += `"${SERVICE_NAMES[s.serviceType]}","${s.sacCode}","${date}","${s.amount}","${s.gstRate}%","${s.gstAmount}","${s.totalAmount}"\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'DreamHarbour_' + new Date().toLocaleDateString() + '.csv';
+      a.download = 'Tax_Report_' + new Date().toLocaleDateString() + '.csv';
       a.click();
     }
 
