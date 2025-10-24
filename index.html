@@ -602,10 +602,6 @@
       background: #f7fafc;
     }
     
-    #recaptcha-container {
-      display: none;
-    }
-    
     @keyframes slideInDown {
       from {
         opacity: 0;
@@ -637,9 +633,6 @@
   </style>
 </head>
 <body>
-
-<!-- RECAPTCHA CONTAINER -->
-<div id="recaptcha-container"></div>
 
 <!-- LOGIN PAGE -->
 <div class="login-wrapper" id="loginPage">
@@ -1040,7 +1033,6 @@ let currentUser = null;
 let servicesData = [];
 let customersData = [];
 let invoicesData = [];
-let recaptchaVerifier = null;
 let confirmationResult = null;
 
 const SERVICESDATABASE = {
@@ -1073,24 +1065,6 @@ function showSuccess(message) {
   }, 3000);
 }
 
-// Initialize Recaptcha Verifier
-function initRecaptcha() {
-  if (recaptchaVerifier) {
-    recaptchaVerifier.clear();
-  }
-  
-  recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-    size: 'invisible',
-    callback: () => {
-      console.log('reCAPTCHA verified');
-    },
-    'expired-callback': () => {
-      console.log('reCAPTCHA expired');
-      recaptchaVerifier = null;
-    }
-  });
-}
-
 // Clear login form
 function resetLoginForm() {
   document.getElementById('phoneNumber').value = '';
@@ -1117,10 +1091,8 @@ document.getElementById('sendOtpBtn').addEventListener('click', async () => {
     document.getElementById('sendOtpBtn').disabled = true;
     document.getElementById('sendOtpBtn').textContent = 'Sending...';
     
-    // Initialize fresh recaptcha
-    initRecaptcha();
-    
-    confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
+    // Use phone sign-in directly without RecaptchaVerifier (more stable)
+    confirmationResult = await auth.signInWithPhoneNumber(phone, window.recaptchaVerifier);
     
     document.getElementById('phoneSection').style.display = 'none';
     document.getElementById('otpSection').style.display = 'block';
@@ -1133,7 +1105,6 @@ document.getElementById('sendOtpBtn').addEventListener('click', async () => {
     showError('Error: ' + (error.message || 'Could not send OTP. Try again.'));
     document.getElementById('sendOtpBtn').disabled = false;
     document.getElementById('sendOtpBtn').textContent = 'Send OTP';
-    recaptchaVerifier = null;
   }
 });
 
@@ -1145,11 +1116,7 @@ document.getElementById('resendOtpBtn').addEventListener('click', async () => {
     document.getElementById('resendOtpBtn').disabled = true;
     document.getElementById('resendOtpBtn').textContent = 'Resending...';
     
-    // Clear old verifier and create new one
-    recaptchaVerifier = null;
-    initRecaptcha();
-    
-    confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
+    confirmationResult = await auth.signInWithPhoneNumber(phone, window.recaptchaVerifier);
     showSuccess('OTP resent to your phone');
     
     document.getElementById('resendOtpBtn').textContent = 'Resend OTP';
@@ -1218,7 +1185,6 @@ function logout() {
     document.getElementById('loginPage').style.display = 'flex';
     document.getElementById('dashboardPage').classList.remove('active');
     resetLoginForm();
-    recaptchaVerifier = null;
     confirmationResult = null;
   }).catch(error => {
     console.error('Logout error:', error);
